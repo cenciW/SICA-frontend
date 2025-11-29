@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
@@ -68,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Logo or Title
-                  const Icon(Icons.eco, size: 64, color: Colors.green)
+                  const Icon(FontAwesomeIcons.leaf, size: 64, color: Colors.green)
                       .animate()
                       .fadeIn(duration: 800.ms, curve: Curves.easeOutQuart)
                       .scale(delay: 200.ms, duration: 600.ms, curve: Curves.easeOutBack)
@@ -113,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                          Icon(FontAwesomeIcons.circleExclamation, color: Colors.red[700], size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -132,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                    prefixIcon: const Icon(FontAwesomeIcons.envelope, size: 18),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, digite seu e-mail';
@@ -151,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onSubmitted: _submit,
-                    prefixIcon: const Icon(Icons.lock_outline, size: 18),
+                    prefixIcon: const Icon(FontAwesomeIcons.lock, size: 18),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, digite sua senha';

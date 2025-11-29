@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.waving_hand, size: 80, color: Colors.amber)
+              const Icon(FontAwesomeIcons.handSpock, size: 80, color: Colors.amber)
                   .animate()
                   .shake(duration: 500.ms)
                   .fadeOut(delay: 500.ms, duration: 300.ms),
@@ -65,7 +66,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => themeProvider.toggleTheme(!isDark),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, size: 20),
+            icon: const Icon(FontAwesomeIcons.arrowRightFromBracket, size: 20),
             onPressed: _handleLogout,
             tooltip: 'Sair',
           ),
@@ -102,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.eco, size: 32, color: Colors.green),
+                      const Icon(FontAwesomeIcons.plantWilt, size: 32, color: Colors.green),
                       const SizedBox(width: 12),
                       Text(
                         'Olá, ${user?['name'] ?? 'Usuário'}!',
@@ -143,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   _buildDashboardCard(
                     context,
-                    icon: Icons.thermostat,
+                    icon: FontAwesomeIcons.temperatureThreeQuarters,
                     title: 'Temperatura',
                     value: '24°C',
                     color: Colors.orange,
@@ -151,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildDashboardCard(
                     context,
-                    icon: Icons.water_drop,
+                    icon: FontAwesomeIcons.droplet,
                     title: 'Umidade',
                     value: '65%',
                     color: Colors.blue,
@@ -159,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildDashboardCard(
                     context,
-                    icon: Icons.light_mode,
+                    icon: FontAwesomeIcons.sun,
                     title: 'Luminosidade',
                     value: '850 lux',
                     color: Colors.amber,
@@ -167,7 +168,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildDashboardCard(
                     context,
-                    icon: Icons.grass,
+                    icon: FontAwesomeIcons.seedling,
                     title: 'Umidade do Solo',
                     value: 'Alta',
                     color: Colors.brown,

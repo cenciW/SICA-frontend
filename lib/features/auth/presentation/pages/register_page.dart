@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
@@ -71,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Plant Icon Animation
-                  const Icon(Icons.local_florist, size: 64, color: Colors.green)
+                  const Icon(FontAwesomeIcons.seedling, size: 64, color: Colors.green)
                       .animate(onPlay: (controller) => controller.repeat(reverse: true))
                       .scale(duration: 1.5.seconds, begin: const Offset(1, 1), end: const Offset(1.1, 1.1), curve: Curves.easeInOut)
                       .then()
@@ -107,7 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                          Icon(FontAwesomeIcons.circleExclamation, color: Colors.red[700], size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -125,7 +126,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     hint: 'Digite seu nome',
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.person_outline, size: 18),
+                    prefixIcon: const Icon(FontAwesomeIcons.user, size: 18),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, digite seu nome';
@@ -140,7 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                    prefixIcon: const Icon(FontAwesomeIcons.envelope, size: 18),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, digite seu e-mail';
@@ -159,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onSubmitted: _submit,
-                    prefixIcon: const Icon(Icons.lock_outline, size: 18),
+                    prefixIcon: const Icon(FontAwesomeIcons.lock, size: 18),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, digite uma senha';
