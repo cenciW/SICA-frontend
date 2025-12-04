@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../estufa/presentation/providers/estufa_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +27,48 @@ class _HomePageState extends State<HomePage> {
       context.read<AuthProvider>().logout();
       context.go('/login');
     }
+  }
+
+  void _showVincularEstufaDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vincular Estufa'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Código da Estufa'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final codigo = controller.text;
+              if (codigo.isNotEmpty) {
+                final token = context.read<AuthProvider>().token;
+                if (token != null) {
+                  final success = await context.read<EstufaProvider>().vincularEstufa(codigo, token);
+                  if (success) {
+                    if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Estufa vinculada com sucesso!')));
+                    }
+                  } else {
+                    if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.read<EstufaProvider>().error ?? 'Erro ao vincular')));
+                    }
+                  }
+                }
+              }
+            },
+            child: const Text('Vincular'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -58,6 +101,65 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(FontAwesomeIcons.leaf, size: 48, color: Colors.white),
+                  const SizedBox(height: 10),
+                  Text(
+                    'SICA',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Início'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+              },
+            ),
+            if (user?['role'] == 'ADMIN')
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Usuários'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/usuarios');
+                },
+              ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.plantWilt),
+              title: const Text('Estufas'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/estufas');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: const Text('Adicionar Estufa'),
+              onTap: () {
+                Navigator.pop(context);
+                _showVincularEstufaDialog(context);
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: const Text('Painel SICA'),
         actions: [
