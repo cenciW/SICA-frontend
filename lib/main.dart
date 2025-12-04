@@ -29,6 +29,10 @@ import 'features/estufa_usuario/presentation/providers/estufa_usuario_provider.d
 import 'features/estufa_usuario/presentation/pages/estufa_usuario_list_page.dart';
 import 'features/estufa_usuario/presentation/pages/estufa_usuario_form_page.dart';
 
+import 'features/modulo/data/datasources/modulo_remote_datasource.dart';
+import 'features/modulo/data/repositories/modulo_repository_impl.dart';
+import 'features/modulo/presentation/providers/modulo_provider.dart';
+
 void main() {
 
   runApp(const MyApp());
@@ -118,12 +122,19 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => EstufaUsuarioProvider(
+          create: (context) => EstufaUsuarioProvider(
             repository: EstufaUsuarioRepositoryImpl(
               remoteDataSource: EstufaUsuarioRemoteDataSource(
                 baseUrl: baseUrl,
                 client: httpClient,
               ),
+            ),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ModuloProvider(
+            repository: ModuloRepositoryImpl(
+              remoteDataSource: ModuloRemoteDataSource(http.Client()),
             ),
           ),
         ),

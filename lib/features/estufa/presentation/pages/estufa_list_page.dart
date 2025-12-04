@@ -4,6 +4,9 @@ import '../providers/estufa_provider.dart';
 import 'estufa_form_page.dart';
 import 'estufa_control_page.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../modulo/presentation/pages/modulo_list_page.dart';
+import '../../../modulo/presentation/providers/modulo_provider.dart';
+import '../../../modulo/domain/entities/modulo.dart';
 
 class EstufaListPage extends StatefulWidget {
   const EstufaListPage({super.key});
@@ -16,10 +19,15 @@ class _EstufaListPageState extends State<EstufaListPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
-        context.read<EstufaProvider>().loadEstufas(token);
+        await context.read<EstufaProvider>().loadEstufas(token);
+        
+        // Load all modules at once to avoid race conditions
+        final estufas = context.read<EstufaProvider>().estufas;
+        final estufaIds = estufas.map((e) => e.id).toList();
+        await context.read<ModuloProvider>().loadAllModulos(estufaIds, token);
       }
     });
   }
@@ -27,8 +35,20 @@ class _EstufaListPageState extends State<EstufaListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA), // Off-white elegant background
       appBar: AppBar(
-        title: const Text('Estufas'),
+        title: const Text('Minhas Estufas'),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E3A5F), Color(0xFF2C5F8D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -60,59 +80,88 @@ class _EstufaListPageState extends State<EstufaListPage> {
             itemCount: provider.estufas.length,
             itemBuilder: (context, index) {
               final estufa = provider.estufas[index];
-              final statusColor = estufa.status == 'ativa' 
-                  ? Colors.green 
-                  : estufa.status == 'inativa' 
-                      ? Colors.red 
-                      : Colors.orange;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Card(
-                  elevation: 8,
+                  elevation: 3,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EstufaControlPage(estufa: estufa),
-                        ),
-                      );
-                    },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF1E3A5F), // Deep blue
+                          const Color(0xFF2C5F8D), // Lighter blue
+                        ],
+                      ),
+                    ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header with name and status
+                          // Header Row
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Text(
-                                  estufa.nome,
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      estufa.nome,
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: Color(0xFFB0BEC5),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          estufa.localizacao ?? 'Sem localização',
+                                          style: const TextStyle(
+                                            color: Color(0xFFB0BEC5),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: statusColor, width: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
-                                child: Text(
-                                  estufa.status.toUpperCase(),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00C853), // Bright green
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00C853).withOpacity(0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  'ATIVA',
                                   style: TextStyle(
-                                    color: statusColor,
+                                    color: Colors.white,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
@@ -121,282 +170,323 @@ class _EstufaListPageState extends State<EstufaListPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          
-                          // Location
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, size: 18, color: Colors.grey[600]),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  estufa.localizacao ?? 'Sem localização',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.grey[700],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Volume info
+                          const SizedBox(height: 20),
+
+                          // Volume Card
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.blue.shade50, Colors.blue.shade100],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: const Color(0xFF00B0FF).withOpacity(0.2), // Bright blue tint
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF00B0FF).withOpacity(0.4),
+                              ),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF00B0FF),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.view_in_ar,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    const Text(
                                       'Volume Total',
                                       style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[700],
-                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFFB0BEC5),
+                                        fontSize: 12,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
                                     Text(
                                       '${estufa.volumeTotal?.toStringAsFixed(2) ?? "N/A"} m³',
                                       style: const TextStyle(
-                                        fontSize: 24,
+                                        color: Colors.white,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
                                       ),
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.space_dashboard,
-                                    color: Colors.blue,
-                                    size: 36,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          
-                          // Environment Metrics
+                          const SizedBox(height: 16),
+
+                          // Environmental Metrics Row
                           Row(
                             children: [
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.thermostat, size: 18, color: Colors.orange.shade700),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${estufa.temperatura?.toStringAsFixed(1) ?? "25.0"}°C',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.orange.shade700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                child: _buildMetric(
+                                  icon: Icons.thermostat,
+                                  label: 'Temp',
+                                  value: '${estufa.temperatura?.toStringAsFixed(1) ?? "--"}°C',
+                                  color: const Color(0xFFFF6F00), // Vivid orange
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.cyan.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.water_drop, size: 18, color: Colors.cyan.shade700),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${estufa.umidade?.toStringAsFixed(0) ?? "60"}%',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.cyan.shade700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                child: _buildMetric(
+                                  icon: Icons.water_drop,
+                                  label: 'Umidade',
+                                  value: '${estufa.umidade?.toStringAsFixed(0) ?? "--"}%',
+                                  color: const Color(0xFF00B8D4), // Bright cyan
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.purple.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.speed, size: 18, color: Colors.purple.shade700),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'VPD ${estufa.vpd?.toStringAsFixed(2) ?? "0.0"}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.purple.shade700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                child: _buildMetric(
+                                  icon: Icons.air,
+                                  label: 'VPD',
+                                  value: '${estufa.vpd?.toStringAsFixed(2) ?? "--"}',
+                                  color: const Color(0xFFAA00FF), // Vivid purple
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          
-                          // IoT Devices Status
+
+                          // IoT Devices
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
+                              color: Colors.white.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _DeviceIndicator(
-                                  icon: Icons.air,
-                                  label: 'Exaustor',
-                                  isOn: estufa.exaustorLigado,
-                                  onTap: () async {
-                                    final token = context.read<AuthProvider>().token;
-                                    if (token != null) {
-                                      await context.read<EstufaProvider>().toggleDevice(
-                                        estufa.id, 'exaustor', !estufa.exaustorLigado, token,
-                                      );
-                                    }
-                                  },
+                                const Text(
+                                  'Dispositivos IoT',
+                                  style: TextStyle(
+                                    color: Color(0xFFB0BEC5),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: Colors.grey[300],
-                                ),
-                                _DeviceIndicator(
-                                  icon: Icons.wind_power,
-                                  label: 'Ventilador',
-                                  isOn: estufa.ventiladorLigado,
-                                  onTap: () async {
-                                    final token = context.read<AuthProvider>().token;
-                                    if (token != null) {
-                                      await context.read<EstufaProvider>().toggleDevice(
-                                        estufa.id, 'ventilador', !estufa.ventiladorLigado, token,
-                                      );
-                                    }
-                                  },
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: Colors.grey[300],
-                                ),
-                                _DeviceIndicator(
-                                  icon: Icons.lightbulb,
-                                  label: 'LED',
-                                  isOn: estufa.ledLigado,
-                                  onTap: () async {
-                                    final token = context.read<AuthProvider>().token;
-                                    if (token != null) {
-                                      await context.read<EstufaProvider>().toggleDevice(
-                                        estufa.id, 'led', !estufa.ledLigado, token,
-                                      );
-                                    }
-                                  },
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildDeviceIndicator(
+                                      context,
+                                      icon: Icons.air,
+                                      label: 'Exaustor',
+                                      isOn: estufa.exaustorLigado,
+                                      onTap: () async {
+                                        final token = context.read<AuthProvider>().token;
+                                        if (token != null) {
+                                          await context.read<EstufaProvider>().toggleDevice(
+                                                estufa.id,
+                                                'exaustor',
+                                                !estufa.exaustorLigado,
+                                                token,
+                                              );
+                                        }
+                                      },
+                                    ),
+                                    _buildDeviceIndicator(
+                                      context,
+                                      icon: Icons.wind_power,
+                                      label: 'Ventilador',
+                                      isOn: estufa.ventiladorLigado,
+                                      onTap: () async {
+                                        final token = context.read<AuthProvider>().token;
+                                        if (token != null) {
+                                          await context.read<EstufaProvider>().toggleDevice(
+                                                estufa.id,
+                                                'ventilador',
+                                                !estufa.ventiladorLigado,
+                                                token,
+                                              );
+                                        }
+                                      },
+                                    ),
+                                    _buildDeviceIndicator(
+                                      context,
+                                      icon: Icons.lightbulb,
+                                      label: 'LED',
+                                      isOn: estufa.ledLigado,
+                                      onTap: () async {
+                                        final token = context.read<AuthProvider>().token;
+                                        if (token != null) {
+                                          await context.read<EstufaProvider>().toggleDevice(
+                                                estufa.id,
+                                                'led',
+                                                !estufa.ledLigado,
+                                                token,
+                                              );
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          
-                          // Action buttons
+                          const SizedBox(height: 16),
+
+                          // Modules Status Indicator (NEW!)
+                          Consumer<ModuloProvider>(
+                            builder: (context, moduloProvider, child) {
+                              // CRITICAL FIX: Filter modules by THIS estufa's ID only!
+                              final modulosAtivos = moduloProvider.modulos
+                                  .where((m) => m.estufaId == estufa.id && m.ativo)
+                                  .toList();
+
+                              print('DEBUG: Estufa ${estufa.nome} (${estufa.id})');
+                              print('  Total modulos in provider: ${moduloProvider.modulos.length}');
+                              print('  Modulos for this estufa: ${modulosAtivos.length}');
+
+                              if (modulosAtivos.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF00C853).withOpacity(0.2),
+                                      const Color(0xFF64DD17).withOpacity(0.1),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0xFF00C853).withOpacity(0.4),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF00C853),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(
+                                            Icons.extension,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${modulosAtivos.length} ${modulosAtivos.length == 1 ? "Módulo" : "Módulos"} Instalados',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: modulosAtivos.map((modulo) {
+                                        // Check if any actuator is ON
+                                        final hasActiveActuator = modulo.atuadores.any((a) => a.estado);
+                                        
+                                        // DEBUG: Print module info
+                                        print('  Module: ${modulo.nome} (${modulo.tipoString})');
+                                        print('    Atuadores: ${modulo.atuadores.length}');
+                                        for (var a in modulo.atuadores) {
+                                          print('      - ${a.tipo}: ${a.estado}');
+                                        }
+                                        print('    hasActive: $hasActiveActuator');
+                                        
+                                        return _buildModuleBadge(
+                                          tipo: modulo.tipo,
+                                          nome: modulo.tipoString,
+                                          isActive: hasActiveActuator,
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Modules Button
+                          InkWell(
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ModuloListPage(
+                                    estufaId: estufa.id,
+                                    estufaNome: estufa.nome,
+                                  ),
+                                ),
+                              );
+                              
+                              // Reload modules after returning to update badges
+                              if (context.mounted) {
+                                final token = context.read<AuthProvider>().token;
+                                if (token != null) {
+                                  await context.read<ModuloProvider>().loadModulosByEstufa(estufa.id, token);
+                                }
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF00B0FF), Color(0xFF0091EA)],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF00B0FF).withOpacity(0.4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.extension, color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Ver Módulos IoT',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Action Buttons
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.videocam, color: Colors.blue),
-                                tooltip: 'Câmera',
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Icon(Icons.videocam, color: Colors.blue),
-                                          const SizedBox(width: 8),
-                                          const Text('Monitoramento por Câmera'),
-                                        ],
-                                      ),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.construction,
-                                            size: 64,
-                                            color: Colors.orange.shade300,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                            'Futuramente...',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Em breve você poderá monitorar sua estufa em tempo real através de câmeras!',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: const Text('Voltar'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, color: Colors.orange),
+                                icon: const Icon(Icons.edit_outlined, color: Color(0xFFE67E22)),
                                 tooltip: 'Editar',
                                 onPressed: () {
                                   Navigator.push(
@@ -408,7 +498,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                icon: const Icon(Icons.delete_outline, color: Color(0xFFE74C3C)),
                                 tooltip: 'Excluir',
                                 onPressed: () async {
                                   final confirm = await showDialog<bool>(
@@ -427,7 +517,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                         TextButton(
                                           onPressed: () => Navigator.pop(context, true),
                                           child: const Text(
-                                            'Excluir', 
+                                            'Excluir',
                                             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                                           ),
                                         ),
@@ -435,7 +525,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                     ),
                                   );
 
-                                  if (confirm == true) {
+                                  if (confirm == true && context.mounted) {
                                     final token = context.read<AuthProvider>().token;
                                     if (token != null) {
                                       await context.read<EstufaProvider>().deleteEstufa(estufa.id, token);
@@ -457,42 +547,69 @@ class _EstufaListPageState extends State<EstufaListPage> {
       ),
     );
   }
-}
 
-class _DeviceIndicator extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isOn;
-  final VoidCallback? onTap;
+  Widget _buildMetric({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFBDC3C7),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  const _DeviceIndicator({
-    required this.icon,
-    required this.label,
-    required this.isOn,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildDeviceIndicator(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isOn,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isOn ? Colors.green.withOpacity(0.1) : Colors.transparent,
+              color: isOn ? const Color(0xFF27AE60).withOpacity(0.2) : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: isOn ? Colors.green : Colors.grey.shade300,
+                color: isOn ? const Color(0xFF27AE60) : const Color(0xFF95A5A6),
                 width: 2,
               ),
             ),
             child: Icon(
               icon,
-              size: 28,
-              color: isOn ? Colors.green : Colors.grey[400],
+              size: 24,
+              color: isOn ? const Color(0xFF27AE60) : const Color(0xFF95A5A6),
             ),
           ),
           const SizedBox(height: 6),
@@ -500,13 +617,173 @@ class _DeviceIndicator extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: isOn ? Colors.green.shade700 : Colors.grey[600],
+              color: isOn ? const Color(0xFF27AE60) : const Color(0xFF95A5A6),
               fontWeight: isOn ? FontWeight.bold : FontWeight.w500,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildModuleBadge({
+    required ModuloTipo tipo,
+    required String nome,
+    required bool isActive,
+  }) {
+    Color getModuleColor() {
+      switch (tipo) {
+        case ModuloTipo.co2:
+          return Colors.grey.shade400;
+        case ModuloTipo.irrigacao:
+          return const Color(0xFF00B0FF);
+        case ModuloTipo.iluminacao:
+          return const Color(0xFFFFB300);
+        case ModuloTipo.clima:
+          return const Color(0xFFFF6F00);
+        case ModuloTipo.nutricao:
+          return const Color(0xFF00C853);
+      }
+    }
+
+    final color = getModuleColor();
+
+    Widget badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive ? color : Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isActive ? color : Colors.white.withOpacity(0.2),
+          width: 2,
+        ),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: color.withOpacity(0.6),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Animated pulsing dot
+          if (isActive)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 1500),
+              curve: Curves.easeInOut,
+              builder: (context, value, child) {
+                final pulse = (value * 2 - 1).abs(); // 0 -> 1 -> 0
+                return Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.8 * pulse),
+                        blurRadius: 6 * pulse,
+                        spreadRadius: 2 * pulse,
+                      ),
+                    ],
+                  ),
+                );
+              },
+              onEnd: () {
+                // Restart animation by using StatefulWidget or other method
+                // For now, this creates a one-time pulse
+              },
+            )
+          else
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+            ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                nome,
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                isActive ? 'ON' : 'OFF',
+                style: TextStyle(
+                  color: isActive ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.3),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    // Wrap in AnimatedContainer for smooth transitions
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      child: isActive
+          ? _PulsingWidget(child: badge)
+          : badge,
+    );
+  }
+}
+
+// Stateful widget for continuous pulsing animation
+class _PulsingWidget extends StatefulWidget {
+  final Widget child;
+  const _PulsingWidget({required this.child});
+
+  @override
+  State<_PulsingWidget> createState() => _PulsingWidgetState();
+}
+
+class _PulsingWidgetState extends State<_PulsingWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.85 + (_controller.value * 0.15), // Pulse between 0.85 and 1.0
+          child: widget.child,
+        );
+      },
     );
   }
 }
