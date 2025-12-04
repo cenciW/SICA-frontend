@@ -4,7 +4,7 @@ import '../../domain/entities/modulo.dart';
 
 class ModuloRemoteDataSource {
   final http.Client client;
-  final String baseUrl = 'http://localhost:3000';
+  final String baseUrl = 'http://192.168.1.104:3000';
 
   ModuloRemoteDataSource(this.client);
 
@@ -56,7 +56,8 @@ class ModuloRemoteDataSource {
     }
   }
 
-  Future<Modulo> updateModulo(String id, Map<String, dynamic> data, String token) async {
+  Future<Modulo> updateModulo(
+      String id, Map<String, dynamic> data, String token) async {
     final response = await client.patch(
       Uri.parse('$baseUrl/modulos/$id'),
       headers: {

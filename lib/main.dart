@@ -34,7 +34,6 @@ import 'features/modulo/data/repositories/modulo_repository_impl.dart';
 import 'features/modulo/presentation/providers/modulo_provider.dart';
 
 void main() {
-
   runApp(const MyApp());
 }
 
@@ -85,13 +84,11 @@ final _router = GoRouter(
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
 
   @override
   Widget build(BuildContext context) {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = 'http://192.168.1.104:3000';
     final httpClient = http.Client();
-    
 
     return MultiProvider(
       providers: [
