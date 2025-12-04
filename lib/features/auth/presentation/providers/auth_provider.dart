@@ -15,6 +15,9 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
   Map<String, dynamic>? get user => _user;
 
+  String? _token;
+  String? get token => _token;
+
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -22,7 +25,8 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await authRepository.login(email, password);
-      _user = result; // In a real app, parse to User entity
+      _token = result['access_token'];
+      _user = result['user'];
       _isLoading = false;
       notifyListeners();
       return true;
@@ -40,7 +44,8 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await authRepository.register(email, password, name);
-      _user = result; // In a real app, parse to User entity
+      _token = result['access_token'];
+      _user = result['user']; // Assuming register also returns user object now, or we might need to adjust backend register
       _isLoading = false;
       notifyListeners();
       return true;
@@ -54,6 +59,7 @@ class AuthProvider extends ChangeNotifier {
 
   void logout() {
     _user = null;
+    _token = null;
     notifyListeners();
   }
 }
