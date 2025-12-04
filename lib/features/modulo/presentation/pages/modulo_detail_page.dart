@@ -26,7 +26,9 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
   Future<void> _loadModulo() async {
     final token = context.read<AuthProvider>().token;
     if (token != null) {
-      final modulo = await context.read<ModuloProvider>().getModulo(widget.moduloId, token);
+      final modulo = await context
+          .read<ModuloProvider>()
+          .getModulo(widget.moduloId, token);
       if (mounted) {
         setState(() {
           _modulo = modulo;
@@ -39,7 +41,7 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF1E3A5F), //blue smoothed background
       appBar: AppBar(
         title: Text(_modulo?.nome ?? 'Carregando...'),
         flexibleSpace: Container(
@@ -91,7 +93,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
               if (currentModulo.sensores.isNotEmpty) ...[
                 _buildSectionTitle('Sensores'),
                 const SizedBox(height: 12),
-                ...currentModulo.sensores.map((sensor) => _buildSensorCard(sensor)),
+                ...currentModulo.sensores
+                    .map((sensor) => _buildSensorCard(sensor)),
                 const SizedBox(height: 24),
               ],
 
@@ -99,7 +102,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
               if (currentModulo.atuadores.isNotEmpty) ...[
                 _buildSectionTitle('Controles'),
                 const SizedBox(height: 12),
-                ...currentModulo.atuadores.map((atuador) => _buildAtuadorCard(currentModulo, atuador)),
+                ...currentModulo.atuadores.map(
+                    (atuador) => _buildAtuadorCard(currentModulo, atuador)),
               ],
             ],
           ),
@@ -153,13 +157,16 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: modulo.ativo ? Colors.green.shade100 : Colors.red.shade100,
+                color:
+                    modulo.ativo ? Colors.green.shade100 : Colors.red.shade100,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
                 modulo.ativo ? 'Ativo' : 'Inativo',
                 style: TextStyle(
-                  color: modulo.ativo ? Colors.green.shade700 : Colors.red.shade700,
+                  color: modulo.ativo
+                      ? Colors.green.shade700
+                      : Colors.red.shade700,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -184,13 +191,15 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
   Widget _buildSensorCard(Sensor sensor) {
     final isNormal = sensor.isNormal;
     final statusColor = isNormal ? const Color(0xFF27AE60) : Colors.orange;
-    final backgroundColor = isNormal 
-        ? const Color(0xFF27AE60).withOpacity(0.1) 
+    final backgroundColor = isNormal
+        ? const Color(0xFF27AE60).withOpacity(0.1)
         : Colors.orange.withOpacity(0.1);
 
     // Calculate percentage for progress bar
     double? percentage;
-    if (sensor.valorAtual != null && sensor.valorMin != null && sensor.valorMax != null) {
+    if (sensor.valorAtual != null &&
+        sensor.valorMin != null &&
+        sensor.valorMax != null) {
       final range = sensor.valorMax! - sensor.valorMin!;
       final value = sensor.valorAtual! - sensor.valorMin!;
       percentage = (value / range).clamp(0.0, 1.0);
@@ -254,7 +263,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                   ),
                   // Status Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor,
                       borderRadius: BorderRadius.circular(12),
@@ -282,7 +292,7 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Value Display
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -330,7 +340,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                   ),
                   if (sensor.valorMin != null && sensor.valorMax != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
@@ -359,7 +370,7 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                     ),
                 ],
               ),
-              
+
               // Progress Bar
               if (percentage != null) ...[
                 const SizedBox(height: 16),
@@ -413,8 +424,14 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
             colors: atuador.estado
-                ? [const Color(0xFF27AE60).withOpacity(0.1), const Color(0xFF2ECC71).withOpacity(0.05)]
-                : [Colors.grey.shade50, Colors.grey.shade100],
+                ? [
+                    const Color(0xFF27AE60).withOpacity(0.1),
+                    const Color(0xFF2ECC71).withOpacity(0.05)
+                  ]
+                : [
+                    Colors.grey.shade300.withOpacity(0.1),
+                    Colors.grey.shade200.withOpacity(0.05)
+                  ],
           ),
         ),
         child: Padding(
@@ -427,7 +444,9 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: atuador.estado ? const Color(0xFF27AE60) : Colors.grey.shade300,
+                      color: atuador.estado
+                          ? const Color(0xFF27AE60)
+                          : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -452,7 +471,9 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                         Row(
                           children: [
                             Icon(
-                              atuador.isAutomatico ? Icons.auto_mode : Icons.touch_app,
+                              atuador.isAutomatico
+                                  ? Icons.auto_mode
+                                  : Icons.touch_app,
                               size: 14,
                               color: Colors.grey[600],
                             ),
@@ -498,7 +519,7 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
               const SizedBox(height: 12),
               const Divider(height: 1),
               const SizedBox(height: 12),
-              
+
               // Mode Toggle and Schedule
               Row(
                 children: [
@@ -506,7 +527,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         // TODO: Toggle between manual/automatic mode
-                        final newMode = atuador.isAutomatico ? 'manual' : 'automatico';
+                        final newMode =
+                            atuador.isAutomatico ? 'manual' : 'automatico';
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Modo $newMode em breve...'),
@@ -515,15 +537,20 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                         );
                       },
                       icon: Icon(
-                        atuador.isAutomatico ? Icons.touch_app : Icons.auto_mode,
+                        atuador.isAutomatico
+                            ? Icons.touch_app
+                            : Icons.auto_mode,
                         size: 18,
                       ),
                       label: Text(
-                        atuador.isAutomatico ? 'Modo Manual' : 'Modo Automático',
+                        atuador.isAutomatico
+                            ? 'Modo Manual'
+                            : 'Modo Automático',
                         style: const TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                     ),
                   ),
@@ -533,14 +560,16 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
                       _showScheduleDialog(atuador);
                     },
                     icon: const Icon(Icons.schedule, size: 18),
-                    label: const Text('Agendar', style: TextStyle(fontSize: 12)),
+                    label:
+                        const Text('Agendar', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                     ),
                   ),
                 ],
               ),
-              
+
               // Last action timestamp
               if (atuador.ultimaAcao != null) ...[
                 const SizedBox(height: 8),
@@ -658,7 +687,7 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
-    
+
     if (diff.inMinutes < 1) {
       return 'Agora';
     } else if (diff.inMinutes < 60) {
@@ -702,7 +731,8 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.red.shade700, size: 20),
+                  Icon(Icons.info_outline,
+                      color: Colors.red.shade700, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -726,13 +756,14 @@ class _ModuloDetailPageState extends State<ModuloDetailPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(dialogContext); // Close dialog
-              
+
               final token = context.read<AuthProvider>().token;
               if (token != null) {
-                final success = await context.read<ModuloProvider>().deleteModulo(
-                  _modulo!.id,
-                  token,
-                );
+                final success =
+                    await context.read<ModuloProvider>().deleteModulo(
+                          _modulo!.id,
+                          token,
+                        );
 
                 if (context.mounted) {
                   if (success) {

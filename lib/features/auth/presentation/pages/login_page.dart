@@ -69,21 +69,28 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Logo or Title
-                  const Icon(FontAwesomeIcons.leaf, size: 64, color: Colors.green)
+                  const Icon(FontAwesomeIcons.leaf,
+                          size: 64, color: Colors.green)
                       .animate()
                       .fadeIn(duration: 800.ms, curve: Curves.easeOutQuart)
-                      .scale(delay: 200.ms, duration: 600.ms, curve: Curves.easeOutBack)
+                      .scale(
+                          delay: 200.ms,
+                          duration: 600.ms,
+                          curve: Curves.easeOutBack)
                       .then()
                       .shimmer(duration: 1.5.seconds, delay: 1.seconds),
                   const SizedBox(height: 24),
                   Text(
-                    'S.I.C.A.',
+                    'SICA',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
-                  ).animate().fadeIn(delay: 300.ms, duration: 600.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 300.ms, duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
                   const SizedBox(height: 8),
                   Text(
                     'Sistema Inteligente de Cultivo Autônomo',
@@ -91,7 +98,10 @@ class _LoginPageState extends State<LoginPage> {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.grey[600],
                         ),
-                  ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 400.ms, duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
                   const SizedBox(height: 8),
                   Text(
                     'Faça login para continuar',
@@ -99,7 +109,10 @@ class _LoginPageState extends State<LoginPage> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[500],
                         ),
-                  ).animate().fadeIn(delay: 500.ms, duration: 600.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 500.ms, duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
                   const SizedBox(height: 48),
 
                   // Error Message
@@ -114,7 +127,8 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(FontAwesomeIcons.circleExclamation, color: Colors.red[700], size: 20),
+                          Icon(FontAwesomeIcons.circleExclamation,
+                              color: Colors.red[700], size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -143,7 +157,10 @@ class _LoginPageState extends State<LoginPage> {
                       }
                       return null;
                     },
-                  ).animate().fadeIn(delay: 600.ms, duration: 600.ms).slideX(begin: -0.1, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 600.ms, duration: 600.ms)
+                      .slideX(begin: -0.1, end: 0, curve: Curves.easeOutQuad),
                   const SizedBox(height: 24),
                   CustomTextField(
                     label: 'Senha',
@@ -162,7 +179,10 @@ class _LoginPageState extends State<LoginPage> {
                       }
                       return null;
                     },
-                  ).animate().fadeIn(delay: 700.ms, duration: 600.ms).slideX(begin: -0.1, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 700.ms, duration: 600.ms)
+                      .slideX(begin: -0.1, end: 0, curve: Curves.easeOutQuad),
                   const SizedBox(height: 32),
 
                   // Login Button
@@ -170,7 +190,10 @@ class _LoginPageState extends State<LoginPage> {
                     label: 'Entrar',
                     onPressed: _submit,
                     isLoading: authProvider.isLoading,
-                  ).animate().fadeIn(delay: 800.ms, duration: 600.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
+                  )
+                      .animate()
+                      .fadeIn(delay: 800.ms, duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
 
                   const SizedBox(height: 24),
                   TextButton(

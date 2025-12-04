@@ -8,27 +8,29 @@ class EstufaUsuarioRepositoryImpl implements EstufaUsuarioRepository {
   EstufaUsuarioRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<EstufaUsuario>> getEstufaUsuarios() async {
-    return await remoteDataSource.getEstufaUsuarios();
+  Future<List<EstufaUsuario>> getEstufaUsuarios(String token) async {
+    return await remoteDataSource.getEstufaUsuarios(token);
   }
 
   @override
-  Future<EstufaUsuario> getEstufaUsuario(String id) async {
-    return await remoteDataSource.getEstufaUsuario(id);
+  Future<EstufaUsuario> getEstufaUsuario(String id, String token) async {
+    return await remoteDataSource.getEstufaUsuario(id, token);
   }
 
   @override
-  Future<EstufaUsuario> createEstufaUsuario(Map<String, dynamic> data) async {
-    return await remoteDataSource.createEstufaUsuario(data);
+  Future<EstufaUsuario> createEstufaUsuario(
+      Map<String, dynamic> data, String token) async {
+    return await remoteDataSource.createEstufaUsuario(data, token);
   }
 
   @override
-  Future<EstufaUsuario> updateEstufaUsuario(String id, Map<String, dynamic> data) async {
-    return await remoteDataSource.updateEstufaUsuario(id, data);
+  Future<EstufaUsuario> updateEstufaUsuario(
+      String id, Map<String, dynamic> data, String token) async {
+    return await remoteDataSource.updateEstufaUsuario(id, data, token);
   }
 
   @override
-  Future<void> deleteEstufaUsuario(String id) async {
-    await remoteDataSource.deleteEstufaUsuario(id);
+  Future<void> deleteEstufaUsuario(String id, String token) async {
+    await remoteDataSource.deleteEstufaUsuario(id, token);
   }
 }

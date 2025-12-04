@@ -27,13 +27,14 @@ class _EstufaUsuarioFormPageState extends State<EstufaUsuarioFormPage> {
     super.initState();
     _selectedEstufaId = widget.estufaUsuario?.estufaId;
     _selectedUsuarioId = widget.estufaUsuario?.usuarioId;
-    _roleController = TextEditingController(text: widget.estufaUsuario?.role ?? '');
+    _roleController =
+        TextEditingController(text: widget.estufaUsuario?.role ?? '');
     _dataAcessoFim = widget.estufaUsuario?.dataAcessoFim;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<UsuarioProvider>().loadUsuarios();
       final token = context.read<AuthProvider>().token;
       if (token != null) {
+        context.read<UsuarioProvider>().loadUsuarios(token);
         context.read<EstufaProvider>().loadEstufas(token);
       }
     });
@@ -70,12 +71,15 @@ class _EstufaUsuarioFormPageState extends State<EstufaUsuarioFormPage> {
                         child: Text(estufa.nome),
                       );
                     }).toList(),
-                    onChanged: isEditing ? null : (value) {
-                      setState(() {
-                        _selectedEstufaId = value;
-                      });
-                    },
-                    validator: (value) => value == null ? 'Selecione uma estufa' : null,
+                    onChanged: isEditing
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedEstufaId = value;
+                            });
+                          },
+                    validator: (value) =>
+                        value == null ? 'Selecione uma estufa' : null,
                   );
                 },
               ),
@@ -91,12 +95,15 @@ class _EstufaUsuarioFormPageState extends State<EstufaUsuarioFormPage> {
                         child: Text(usuario.email),
                       );
                     }).toList(),
-                    onChanged: isEditing ? null : (value) {
-                      setState(() {
-                        _selectedUsuarioId = value;
-                      });
-                    },
-                    validator: (value) => value == null ? 'Selecione um usuário' : null,
+                    onChanged: isEditing
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedUsuarioId = value;
+                            });
+                          },
+                    validator: (value) =>
+                        value == null ? 'Selecione um usuário' : null,
                   );
                 },
               ),
@@ -114,7 +121,9 @@ class _EstufaUsuarioFormPageState extends State<EstufaUsuarioFormPage> {
               const SizedBox(height: 16),
               ListTile(
                 title: const Text('Data de Fim de Acesso'),
-                subtitle: Text(_dataAcessoFim != null ? _dataAcessoFim.toString() : 'Indefinido'),
+                subtitle: Text(_dataAcessoFim != null
+                    ? _dataAcessoFim.toString()
+                    : 'Indefinido'),
                 trailing: IconButton(
                   icon: const Icon(Icons.calendar_today),
                   onPressed: () async {
@@ -144,18 +153,29 @@ class _EstufaUsuarioFormPageState extends State<EstufaUsuarioFormPage> {
                     };
 
                     final provider = context.read<EstufaUsuarioProvider>();
+                    final token = context.read<AuthProvider>().token;
+                    if (token == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Sessão expirada. Faça login novamente.')),
+                      );
+                      return;
+                    }
                     bool success;
                     if (isEditing) {
-                      success = await provider.updateEstufaUsuario(widget.estufaUsuario!.id, data);
+                      success = await provider.updateEstufaUsuario(
+                          widget.estufaUsuario!.id, data, token);
                     } else {
-                      success = await provider.createEstufaUsuario(data);
+                      success = await provider.createEstufaUsuario(data, token);
                     }
 
                     if (success && mounted) {
                       Navigator.pop(context);
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(provider.error ?? 'Erro ao salvar')),
+                        SnackBar(
+                            content: Text(provider.error ?? 'Erro ao salvar')),
                       );
                     }
                   }

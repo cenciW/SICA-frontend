@@ -27,7 +27,9 @@ class _ModuloListPageState extends State<ModuloListPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
-        context.read<ModuloProvider>().loadModulosByEstufa(widget.estufaId, token);
+        context
+            .read<ModuloProvider>()
+            .loadModulosByEstufa(widget.estufaId, token);
       }
     });
   }
@@ -35,7 +37,7 @@ class _ModuloListPageState extends State<ModuloListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF1E3A5F), //blue smoothed background
       appBar: AppBar(
         title: Text(widget.estufaNome),
         flexibleSpace: Container(
@@ -79,7 +81,9 @@ class _ModuloListPageState extends State<ModuloListPage> {
             );
           }
 
-          if (provider.modulos.where((m) => m.estufaId == widget.estufaId).isEmpty) {
+          if (provider.modulos
+              .where((m) => m.estufaId == widget.estufaId)
+              .isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -102,7 +106,9 @@ class _ModuloListPageState extends State<ModuloListPage> {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: provider.modulos.where((m) => m.estufaId == widget.estufaId).length,
+            itemCount: provider.modulos
+                .where((m) => m.estufaId == widget.estufaId)
+                .length,
             itemBuilder: (context, index) {
               // CRITICAL FIX: Filter modules for THIS estufa only
               final modulosDaEstufa = provider.modulos
@@ -125,12 +131,14 @@ class _ModuloListPageState extends State<ModuloListPage> {
               ),
             ),
           );
-          
+
           // Reload list if module was created
           if (result == true && mounted) {
             final token = context.read<AuthProvider>().token;
             if (token != null) {
-              context.read<ModuloProvider>().loadModulosByEstufa(widget.estufaId, token);
+              context
+                  .read<ModuloProvider>()
+                  .loadModulosByEstufa(widget.estufaId, token);
             }
           }
         },
@@ -234,15 +242,20 @@ class _ModuloCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: modulo.ativo ? Colors.green.shade100 : Colors.red.shade100,
+                        color: modulo.ativo
+                            ? Colors.green.shade100
+                            : Colors.red.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         modulo.ativo ? 'Ativo' : 'Inativo',
                         style: TextStyle(
-                          color: modulo.ativo ? Colors.green.shade700 : Colors.red.shade700,
+                          color: modulo.ativo
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -317,7 +330,9 @@ class _SensorsSummary extends StatelessWidget {
                     '${sensor.tipo}: ${sensor.valorAtual?.toStringAsFixed(1) ?? "--"} ${sensor.unidade}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isNormal ? Colors.green.shade700 : Colors.orange.shade700,
+                      color: isNormal
+                          ? Colors.green.shade700
+                          : Colors.orange.shade700,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

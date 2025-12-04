@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/usuario.dart';
 import '../providers/usuario_provider.dart';
 
@@ -24,8 +25,10 @@ class _UsuarioFormPageState extends State<UsuarioFormPage> {
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.usuario?.email ?? '');
-    _usuarioController = TextEditingController(text: widget.usuario?.usuario ?? '');
-    _nomeCompletoController = TextEditingController(text: widget.usuario?.nomeCompleto ?? '');
+    _usuarioController =
+        TextEditingController(text: widget.usuario?.usuario ?? '');
+    _nomeCompletoController =
+        TextEditingController(text: widget.usuario?.nomeCompleto ?? '');
     _senhaController = TextEditingController();
     _ativo = widget.usuario?.ativo ?? true;
   }
@@ -122,18 +125,29 @@ class _UsuarioFormPageState extends State<UsuarioFormPage> {
                     }
 
                     final provider = context.read<UsuarioProvider>();
+                    final token = context.read<AuthProvider>().token;
+                    if (token == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Sessão expirada. Faça login novamente.')),
+                      );
+                      return;
+                    }
                     bool success;
                     if (isEditing) {
-                      success = await provider.updateUsuario(widget.usuario!.id, data);
+                      success = await provider.updateUsuario(
+                          widget.usuario!.id, data, token);
                     } else {
-                      success = await provider.createUsuario(data);
+                      success = await provider.createUsuario(data, token);
                     }
 
                     if (success && mounted) {
                       Navigator.pop(context);
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(provider.error ?? 'Erro ao salvar')),
+                        SnackBar(
+                            content: Text(provider.error ?? 'Erro ao salvar')),
                       );
                     }
                   }

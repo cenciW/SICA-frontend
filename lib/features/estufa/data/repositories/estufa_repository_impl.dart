@@ -13,17 +13,18 @@ class EstufaRepositoryImpl implements EstufaRepository {
   }
 
   @override
-  Future<Estufa> getEstufa(String id) async {
-    return await remoteDataSource.getEstufa(id);
+  Future<Estufa> getEstufa(String id, String token) async {
+    return await remoteDataSource.getEstufa(id, token);
   }
 
   @override
-  Future<Estufa> createEstufa(Map<String, dynamic> data) async {
-    return await remoteDataSource.createEstufa(data);
+  Future<Estufa> createEstufa(Map<String, dynamic> data, String token) async {
+    return await remoteDataSource.createEstufa(data, token);
   }
 
   @override
-  Future<Estufa> updateEstufa(String id, Map<String, dynamic> data, String token) async {
+  Future<Estufa> updateEstufa(
+      String id, Map<String, dynamic> data, String token) async {
     return await remoteDataSource.updateEstufa(id, data, token);
   }
 
@@ -33,12 +34,13 @@ class EstufaRepositoryImpl implements EstufaRepository {
   }
 
   @override
-  Future<void> vincularEstufa(String codigo, String token) async {
-    await remoteDataSource.vincularEstufa(codigo, token);
+  Future<Estufa> vincularEstufa(String codigo, String token) async {
+    return await remoteDataSource.vincularEstufa(codigo, token);
   }
 
   @override
-  Future<Estufa> toggleDevice(String id, String device, bool state, String token) async {
+  Future<Estufa> toggleDevice(
+      String id, String device, bool state, String token) async {
     return await remoteDataSource.toggleDevice(id, device, state, token);
   }
 }

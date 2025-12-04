@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/usuario_provider.dart';
 import 'usuario_form_page.dart';
 
@@ -15,7 +16,10 @@ class _UsuarioListPageState extends State<UsuarioListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<UsuarioProvider>().loadUsuarios();
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<UsuarioProvider>().loadUsuarios(token);
+      }
     });
   }
 
@@ -30,7 +34,8 @@ class _UsuarioListPageState extends State<UsuarioListPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const UsuarioFormPage()),
+                MaterialPageRoute(
+                    builder: (context) => const UsuarioFormPage()),
               );
             },
           ),
@@ -54,6 +59,11 @@ class _UsuarioListPageState extends State<UsuarioListPage> {
             itemCount: provider.usuarios.length,
             itemBuilder: (context, index) {
               final usuario = provider.usuarios[index];
+              final authProvider = context.read<AuthProvider>();
+              final currentUserId = authProvider.user?['id']?.toString();
+              final isCurrentUser =
+                  currentUserId != null && currentUserId == usuario.id;
+
               return ListTile(
                 title: Text(usuario.usuario),
                 subtitle: Text(usuario.email),
@@ -66,36 +76,58 @@ class _UsuarioListPageState extends State<UsuarioListPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => UsuarioFormPage(usuario: usuario),
+                            builder: (context) =>
+                                UsuarioFormPage(usuario: usuario),
                           ),
                         );
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Confirmar exclusão'),
-                            content: const Text('Deseja realmente excluir este usuário?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancelar'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Excluir'),
-                              ),
-                            ],
-                          ),
-                        );
+                      icon: Icon(
+                        Icons.delete,
+                        color: isCurrentUser ? Colors.grey : null,
+                      ),
+                      onPressed: isCurrentUser
+                          ? () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Você não pode excluir sua própria conta.'),
+                                ),
+                              );
+                            }
+                          : () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Confirmar exclusão'),
+                                  content: const Text(
+                                      'Deseja realmente excluir este usuário?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('Excluir'),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                        if (confirm == true) {
-                          await context.read<UsuarioProvider>().deleteUsuario(usuario.id);
-                        }
-                      },
+                              if (confirm == true) {
+                                final token =
+                                    context.read<AuthProvider>().token;
+                                if (token != null) {
+                                  await context
+                                      .read<UsuarioProvider>()
+                                      .deleteUsuario(usuario.id, token);
+                                }
+                              }
+                            },
                     ),
                   ],
                 ),

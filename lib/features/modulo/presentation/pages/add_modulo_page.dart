@@ -87,7 +87,8 @@ class _AddModuloPageState extends State<AddModuloPage> {
       'ativo': true,
     };
 
-    final success = await context.read<ModuloProvider>().createModulo(data, token);
+    final success =
+        await context.read<ModuloProvider>().createModulo(data, token);
 
     if (mounted) {
       setState(() => _isCreating = false);
@@ -105,7 +106,7 @@ class _AddModuloPageState extends State<AddModuloPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF1E3A5F), //blue smoothed background
       appBar: AppBar(
         title: const Text('Adicionar Módulo'),
         flexibleSpace: Container(
@@ -129,7 +130,7 @@ class _AddModuloPageState extends State<AddModuloPage> {
               'Adicionar módulo em:',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: Colors.grey[400],
               ),
             ),
             const SizedBox(height: 4),

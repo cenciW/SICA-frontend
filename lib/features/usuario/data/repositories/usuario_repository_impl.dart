@@ -8,27 +8,28 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
   UsuarioRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Usuario>> getUsuarios() async {
-    return await remoteDataSource.getUsuarios();
+  Future<List<Usuario>> getUsuarios(String token) async {
+    return await remoteDataSource.getUsuarios(token);
   }
 
   @override
-  Future<Usuario> getUsuario(String id) async {
-    return await remoteDataSource.getUsuario(id);
+  Future<Usuario> getUsuario(String id, String token) async {
+    return await remoteDataSource.getUsuario(id, token);
   }
 
   @override
-  Future<Usuario> createUsuario(Map<String, dynamic> data) async {
-    return await remoteDataSource.createUsuario(data);
+  Future<Usuario> createUsuario(Map<String, dynamic> data, String token) async {
+    return await remoteDataSource.createUsuario(data, token);
   }
 
   @override
-  Future<Usuario> updateUsuario(String id, Map<String, dynamic> data) async {
-    return await remoteDataSource.updateUsuario(id, data);
+  Future<Usuario> updateUsuario(
+      String id, Map<String, dynamic> data, String token) async {
+    return await remoteDataSource.updateUsuario(id, data, token);
   }
 
   @override
-  Future<void> deleteUsuario(String id) async {
-    await remoteDataSource.deleteUsuario(id);
+  Future<void> deleteUsuario(String id, String token) async {
+    await remoteDataSource.deleteUsuario(id, token);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_response.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/usuario_repository.dart';
 
@@ -16,32 +17,32 @@ class UsuarioProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  Future<void> loadUsuarios() async {
+  Future<void> loadUsuarios(String token) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _usuarios = await repository.getUsuarios();
+      _usuarios = await repository.getUsuarios(token);
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<bool> createUsuario(Map<String, dynamic> data) async {
+  Future<bool> createUsuario(Map<String, dynamic> data, String token) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final newUser = await repository.createUsuario(data);
+      final newUser = await repository.createUsuario(data, token);
       _usuarios.add(newUser);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -49,20 +50,21 @@ class UsuarioProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateUsuario(String id, Map<String, dynamic> data) async {
+  Future<bool> updateUsuario(
+      String id, Map<String, dynamic> data, String token) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final updatedUser = await repository.updateUsuario(id, data);
+      final updatedUser = await repository.updateUsuario(id, data, token);
       final index = _usuarios.indexWhere((u) => u.id == id);
       if (index != -1) {
         _usuarios[index] = updatedUser;
       }
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -70,17 +72,17 @@ class UsuarioProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> deleteUsuario(String id) async {
+  Future<bool> deleteUsuario(String id, String token) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await repository.deleteUsuario(id);
+      await repository.deleteUsuario(id, token);
       _usuarios.removeWhere((u) => u.id == id);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       return false;
     } finally {
       _isLoading = false;

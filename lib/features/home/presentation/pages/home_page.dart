@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../estufa/presentation/providers/estufa_provider.dart';
+import '../../../estufa/presentation/pages/estufa_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,10 +20,10 @@ class _HomePageState extends State<HomePage> {
 
   void _handleLogout() async {
     setState(() => _isLoggingOut = true);
-    
+
     // Wait for animation
     await Future.delayed(const Duration(milliseconds: 800));
-    
+
     if (mounted) {
       context.read<AuthProvider>().logout();
       context.go('/login');
@@ -33,7 +34,7 @@ class _HomePageState extends State<HomePage> {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Vincular Estufa'),
         content: TextField(
           controller: controller,
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           TextButton(
@@ -50,15 +51,28 @@ class _HomePageState extends State<HomePage> {
               if (codigo.isNotEmpty) {
                 final token = context.read<AuthProvider>().token;
                 if (token != null) {
-                  final success = await context.read<EstufaProvider>().vincularEstufa(codigo, token);
-                  if (success) {
+                  final estufa = await context
+                      .read<EstufaProvider>()
+                      .vincularEstufa(codigo, token);
+                  if (estufa != null) {
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
                     if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Estufa vinculada com sucesso!')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Estufa vinculada com sucesso!')));
+                      // Redireciona para a lista de estufas
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const EstufaListPage()),
+                      );
                     }
                   } else {
-                    if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.read<EstufaProvider>().error ?? 'Erro ao vincular')));
+                    if (dialogContext.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(context.read<EstufaProvider>().error ??
+                              'Erro ao vincular')));
                     }
                   }
                 }
@@ -85,7 +99,8 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(FontAwesomeIcons.handSpock, size: 80, color: Colors.amber)
+              const Icon(FontAwesomeIcons.handSpock,
+                      size: 80, color: Colors.amber)
                   .animate()
                   .shake(duration: 500.ms)
                   .fadeOut(delay: 500.ms, duration: 300.ms),
@@ -113,7 +128,8 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Icon(FontAwesomeIcons.leaf, size: 48, color: Colors.white),
+                  const Icon(FontAwesomeIcons.leaf,
+                      size: 48, color: Colors.white),
                   const SizedBox(height: 10),
                   Text(
                     'SICA',
@@ -185,7 +201,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDark 
+                  colors: isDark
                       ? [Colors.green[900]!, Colors.green[800]!]
                       : [Colors.green[100]!, Colors.green[50]!],
                   begin: Alignment.topLeft,
@@ -205,14 +221,23 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(FontAwesomeIcons.plantWilt, size: 32, color: Colors.green),
+                      const Icon(FontAwesomeIcons.plantWilt,
+                          size: 32, color: Colors.green),
                       const SizedBox(width: 12),
-                      Text(
-                        'Olá, ${user?['name'] ?? 'Usuário'}!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.green[900],
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Olá, ${user?['name'] ?? 'Usuário'}!',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isDark ? Colors.white : Colors.green[900],
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),
@@ -225,7 +250,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
+            )
+                .animate()
+                .fadeIn(duration: 600.ms)
+                .slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
 
             const SizedBox(height: 32),
 
@@ -237,7 +265,7 @@ class _HomePageState extends State<HomePage> {
                   ),
             ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
             const SizedBox(height: 16),
-            
+
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -294,9 +322,9 @@ class _HomePageState extends State<HomePage> {
     required int delay,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -313,24 +341,36 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+          Icon(icon, size: 28, color: color),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+          Flexible(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: delay.ms, duration: 600.ms).scale(delay: delay.ms, curve: Curves.easeOutBack);
+    )
+        .animate()
+        .fadeIn(delay: delay.ms, duration: 600.ms)
+        .scale(delay: delay.ms, curve: Curves.easeOutBack);
   }
 }

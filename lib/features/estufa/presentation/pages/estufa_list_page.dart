@@ -23,7 +23,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
         await context.read<EstufaProvider>().loadEstufas(token);
-        
+
         // Load all modules at once to avoid race conditions
         final estufas = context.read<EstufaProvider>().estufas;
         final estufaIds = estufas.map((e) => e.id).toList();
@@ -35,7 +35,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Off-white elegant background
+      backgroundColor: const Color(0xFF1E3A5F), // blue smoothed background
       appBar: AppBar(
         title: const Text('Minhas Estufas'),
         flexibleSpace: Container(
@@ -49,17 +49,6 @@ class _EstufaListPageState extends State<EstufaListPage> {
         ),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EstufaFormPage()),
-              );
-            },
-          ),
-        ],
       ),
       body: Consumer<EstufaProvider>(
         builder: (context, provider, child) {
@@ -131,7 +120,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          estufa.localizacao ?? 'Sem localização',
+                                          estufa.localizacao ??
+                                              'Sem localização',
                                           style: const TextStyle(
                                             color: Color(0xFFB0BEC5),
                                             fontSize: 13,
@@ -148,11 +138,13 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00C853), // Bright green
+                                  color:
+                                      const Color(0xFF00C853), // Bright green
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF00C853).withOpacity(0.4),
+                                      color: const Color(0xFF00C853)
+                                          .withOpacity(0.4),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -176,7 +168,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00B0FF).withOpacity(0.2), // Bright blue tint
+                              color: const Color(0xFF00B0FF)
+                                  .withOpacity(0.2), // Bright blue tint
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: const Color(0xFF00B0FF).withOpacity(0.4),
@@ -229,8 +222,10 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                 child: _buildMetric(
                                   icon: Icons.thermostat,
                                   label: 'Temp',
-                                  value: '${estufa.temperatura?.toStringAsFixed(1) ?? "--"}°C',
-                                  color: const Color(0xFFFF6F00), // Vivid orange
+                                  value:
+                                      '${estufa.temperatura?.toStringAsFixed(1) ?? "--"}°C',
+                                  color:
+                                      const Color(0xFFFF6F00), // Vivid orange
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -238,7 +233,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                 child: _buildMetric(
                                   icon: Icons.water_drop,
                                   label: 'Umidade',
-                                  value: '${estufa.umidade?.toStringAsFixed(0) ?? "--"}%',
+                                  value:
+                                      '${estufa.umidade?.toStringAsFixed(0) ?? "--"}%',
                                   color: const Color(0xFF00B8D4), // Bright cyan
                                 ),
                               ),
@@ -247,8 +243,10 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                 child: _buildMetric(
                                   icon: Icons.air,
                                   label: 'VPD',
-                                  value: '${estufa.vpd?.toStringAsFixed(2) ?? "--"}',
-                                  color: const Color(0xFFAA00FF), // Vivid purple
+                                  value:
+                                      '${estufa.vpd?.toStringAsFixed(2) ?? "--"}',
+                                  color:
+                                      const Color(0xFFAA00FF), // Vivid purple
                                 ),
                               ),
                             ],
@@ -275,7 +273,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                 ),
                                 const SizedBox(height: 10),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
                                   children: [
                                     _buildDeviceIndicator(
                                       context,
@@ -283,9 +282,12 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                       label: 'Exaustor',
                                       isOn: estufa.exaustorLigado,
                                       onTap: () async {
-                                        final token = context.read<AuthProvider>().token;
+                                        final token =
+                                            context.read<AuthProvider>().token;
                                         if (token != null) {
-                                          await context.read<EstufaProvider>().toggleDevice(
+                                          await context
+                                              .read<EstufaProvider>()
+                                              .toggleDevice(
                                                 estufa.id,
                                                 'exaustor',
                                                 !estufa.exaustorLigado,
@@ -300,9 +302,12 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                       label: 'Ventilador',
                                       isOn: estufa.ventiladorLigado,
                                       onTap: () async {
-                                        final token = context.read<AuthProvider>().token;
+                                        final token =
+                                            context.read<AuthProvider>().token;
                                         if (token != null) {
-                                          await context.read<EstufaProvider>().toggleDevice(
+                                          await context
+                                              .read<EstufaProvider>()
+                                              .toggleDevice(
                                                 estufa.id,
                                                 'ventilador',
                                                 !estufa.ventiladorLigado,
@@ -317,9 +322,12 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                       label: 'LED',
                                       isOn: estufa.ledLigado,
                                       onTap: () async {
-                                        final token = context.read<AuthProvider>().token;
+                                        final token =
+                                            context.read<AuthProvider>().token;
                                         if (token != null) {
-                                          await context.read<EstufaProvider>().toggleDevice(
+                                          await context
+                                              .read<EstufaProvider>()
+                                              .toggleDevice(
                                                 estufa.id,
                                                 'led',
                                                 !estufa.ledLigado,
@@ -340,12 +348,16 @@ class _EstufaListPageState extends State<EstufaListPage> {
                             builder: (context, moduloProvider, child) {
                               // CRITICAL FIX: Filter modules by THIS estufa's ID only!
                               final modulosAtivos = moduloProvider.modulos
-                                  .where((m) => m.estufaId == estufa.id && m.ativo)
+                                  .where(
+                                      (m) => m.estufaId == estufa.id && m.ativo)
                                   .toList();
 
-                              print('DEBUG: Estufa ${estufa.nome} (${estufa.id})');
-                              print('  Total modulos in provider: ${moduloProvider.modulos.length}');
-                              print('  Modulos for this estufa: ${modulosAtivos.length}');
+                              print(
+                                  'DEBUG: Estufa ${estufa.nome} (${estufa.id})');
+                              print(
+                                  '  Total modulos in provider: ${moduloProvider.modulos.length}');
+                              print(
+                                  '  Modulos for this estufa: ${modulosAtivos.length}');
 
                               if (modulosAtivos.isEmpty) {
                                 return const SizedBox.shrink();
@@ -362,7 +374,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: const Color(0xFF00C853).withOpacity(0.4),
+                                    color: const Color(0xFF00C853)
+                                        .withOpacity(0.4),
                                   ),
                                 ),
                                 child: Column(
@@ -374,7 +387,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                           padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF00C853),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
                                           ),
                                           child: const Icon(
                                             Icons.extension,
@@ -399,16 +413,22 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                       runSpacing: 8,
                                       children: modulosAtivos.map((modulo) {
                                         // Check if any actuator is ON
-                                        final hasActiveActuator = modulo.atuadores.any((a) => a.estado);
-                                        
+                                        final hasActiveActuator = modulo
+                                            .atuadores
+                                            .any((a) => a.estado);
+
                                         // DEBUG: Print module info
-                                        print('  Module: ${modulo.nome} (${modulo.tipoString})');
-                                        print('    Atuadores: ${modulo.atuadores.length}');
+                                        print(
+                                            '  Module: ${modulo.nome} (${modulo.tipoString})');
+                                        print(
+                                            '    Atuadores: ${modulo.atuadores.length}');
                                         for (var a in modulo.atuadores) {
-                                          print('      - ${a.tipo}: ${a.estado}');
+                                          print(
+                                              '      - ${a.tipo}: ${a.estado}');
                                         }
-                                        print('    hasActive: $hasActiveActuator');
-                                        
+                                        print(
+                                            '    hasActive: $hasActiveActuator');
+
                                         return _buildModuleBadge(
                                           tipo: modulo.tipo,
                                           nome: modulo.tipoString,
@@ -435,26 +455,34 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                   ),
                                 ),
                               );
-                              
+
                               // Reload modules after returning to update badges
                               if (context.mounted) {
-                                final token = context.read<AuthProvider>().token;
+                                final token =
+                                    context.read<AuthProvider>().token;
                                 if (token != null) {
-                                  await context.read<ModuloProvider>().loadModulosByEstufa(estufa.id, token);
+                                  await context
+                                      .read<ModuloProvider>()
+                                      .loadModulosByEstufa(estufa.id, token);
                                 }
                               }
                             },
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF00B0FF), Color(0xFF0091EA)],
+                                  colors: [
+                                    Color(0xFF00B0FF),
+                                    Color(0xFF0091EA)
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF00B0FF).withOpacity(0.4),
+                                    color: const Color(0xFF00B0FF)
+                                        .withOpacity(0.4),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -463,7 +491,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: const [
-                                  Icon(Icons.extension, color: Colors.white, size: 18),
+                                  Icon(Icons.extension,
+                                      color: Colors.white, size: 18),
                                   SizedBox(width: 8),
                                   Text(
                                     'Ver Módulos IoT',
@@ -474,7 +503,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                     ),
                                   ),
                                   Spacer(),
-                                  Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                                  Icon(Icons.arrow_forward_ios,
+                                      color: Colors.white, size: 14),
                                 ],
                               ),
                             ),
@@ -486,19 +516,22 @@ class _EstufaListPageState extends State<EstufaListPage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit_outlined, color: Color(0xFFE67E22)),
+                                icon: const Icon(Icons.edit_outlined,
+                                    color: Color(0xFFE67E22)),
                                 tooltip: 'Editar',
                                 onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => EstufaFormPage(estufa: estufa),
+                                      builder: (context) =>
+                                          EstufaFormPage(estufa: estufa),
                                     ),
                                   );
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Color(0xFFE74C3C)),
+                                icon: const Icon(Icons.delete_outline,
+                                    color: Color(0xFFE74C3C)),
                                 tooltip: 'Excluir',
                                 onPressed: () async {
                                   final confirm = await showDialog<bool>(
@@ -508,17 +541,22 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       title: const Text('Confirmar exclusão'),
-                                      content: Text('Deseja realmente excluir "${estufa.nome}"?'),
+                                      content: Text(
+                                          'Deseja realmente excluir "${estufa.nome}"?'),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
                                           child: const Text('Cancelar'),
                                         ),
                                         TextButton(
-                                          onPressed: () => Navigator.pop(context, true),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
                                           child: const Text(
                                             'Excluir',
-                                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ],
@@ -526,9 +564,12 @@ class _EstufaListPageState extends State<EstufaListPage> {
                                   );
 
                                   if (confirm == true && context.mounted) {
-                                    final token = context.read<AuthProvider>().token;
+                                    final token =
+                                        context.read<AuthProvider>().token;
                                     if (token != null) {
-                                      await context.read<EstufaProvider>().deleteEstufa(estufa.id, token);
+                                      await context
+                                          .read<EstufaProvider>()
+                                          .deleteEstufa(estufa.id, token);
                                     }
                                   }
                                 },
@@ -599,7 +640,9 @@ class _EstufaListPageState extends State<EstufaListPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isOn ? const Color(0xFF27AE60).withOpacity(0.2) : Colors.transparent,
+              color: isOn
+                  ? const Color(0xFF27AE60).withOpacity(0.2)
+                  : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
                 color: isOn ? const Color(0xFF27AE60) : const Color(0xFF95A5A6),
@@ -716,7 +759,8 @@ class _EstufaListPageState extends State<EstufaListPage> {
               Text(
                 nome,
                 style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                  color:
+                      isActive ? Colors.white : Colors.white.withOpacity(0.5),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -724,7 +768,9 @@ class _EstufaListPageState extends State<EstufaListPage> {
               Text(
                 isActive ? 'ON' : 'OFF',
                 style: TextStyle(
-                  color: isActive ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.3),
+                  color: isActive
+                      ? Colors.white.withOpacity(0.9)
+                      : Colors.white.withOpacity(0.3),
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
@@ -739,9 +785,7 @@ class _EstufaListPageState extends State<EstufaListPage> {
     // Wrap in AnimatedContainer for smooth transitions
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      child: isActive
-          ? _PulsingWidget(child: badge)
-          : badge,
+      child: isActive ? _PulsingWidget(child: badge) : badge,
     );
   }
 }
@@ -780,7 +824,8 @@ class _PulsingWidgetState extends State<_PulsingWidget>
       animation: _controller,
       builder: (context, child) {
         return Opacity(
-          opacity: 0.85 + (_controller.value * 0.15), // Pulse between 0.85 and 1.0
+          opacity:
+              0.85 + (_controller.value * 0.15), // Pulse between 0.85 and 1.0
           child: widget.child,
         );
       },

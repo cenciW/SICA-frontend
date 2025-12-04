@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/estufa_usuario_provider.dart';
 import 'estufa_usuario_form_page.dart';
 
@@ -15,7 +16,10 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<EstufaUsuarioProvider>().loadEstufaUsuarios();
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<EstufaUsuarioProvider>().loadEstufaUsuarios(token);
+      }
     });
   }
 
@@ -30,7 +34,8 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const EstufaUsuarioFormPage()),
+                MaterialPageRoute(
+                    builder: (context) => const EstufaUsuarioFormPage()),
               );
             },
           ),
@@ -55,8 +60,10 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
             itemBuilder: (context, index) {
               final estufaUsuario = provider.estufaUsuarios[index];
               return ListTile(
-                title: Text('Estufa: ${estufaUsuario.estufa?.nome ?? estufaUsuario.estufaId}'),
-                subtitle: Text('Usuário: ${estufaUsuario.usuario?.email ?? estufaUsuario.usuarioId} - Role: ${estufaUsuario.role}'),
+                title: Text(
+                    'Estufa: ${estufaUsuario.estufa?.nome ?? estufaUsuario.estufaId}'),
+                subtitle: Text(
+                    'Usuário: ${estufaUsuario.usuario?.email ?? estufaUsuario.usuarioId} - Role: ${estufaUsuario.role}'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -66,7 +73,8 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EstufaUsuarioFormPage(estufaUsuario: estufaUsuario),
+                            builder: (context) => EstufaUsuarioFormPage(
+                                estufaUsuario: estufaUsuario),
                           ),
                         );
                       },
@@ -78,7 +86,8 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: const Text('Confirmar exclusão'),
-                            content: const Text('Deseja realmente excluir este vínculo?'),
+                            content: const Text(
+                                'Deseja realmente excluir este vínculo?'),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
@@ -93,7 +102,12 @@ class _EstufaUsuarioListPageState extends State<EstufaUsuarioListPage> {
                         );
 
                         if (confirm == true) {
-                          await context.read<EstufaUsuarioProvider>().deleteEstufaUsuario(estufaUsuario.id);
+                          final token = context.read<AuthProvider>().token;
+                          if (token != null) {
+                            await context
+                                .read<EstufaUsuarioProvider>()
+                                .deleteEstufaUsuario(estufaUsuario.id, token);
+                          }
                         }
                       },
                     ),

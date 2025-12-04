@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_response.dart';
 import '../../domain/entities/modulo.dart';
 import '../../domain/repositories/modulo_repository.dart';
 
@@ -22,12 +23,12 @@ class ModuloProvider with ChangeNotifier {
 
     try {
       final newModulos = await repository.getModulosByEstufa(estufaId, token);
-      
+
       // Remove old modules from this estufa and add new ones
       _modulos.removeWhere((m) => m.estufaId == estufaId);
       _modulos.addAll(newModulos);
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -38,7 +39,7 @@ class ModuloProvider with ChangeNotifier {
     try {
       return await repository.getModulo(id, token);
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       notifyListeners();
       return null;
     }
@@ -54,7 +55,7 @@ class ModuloProvider with ChangeNotifier {
       _modulos.add(newModulo);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -62,15 +63,18 @@ class ModuloProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> toggleAtuador(String moduloId, String atuadorId, bool estado, String token) async {
+  Future<bool> toggleAtuador(
+      String moduloId, String atuadorId, bool estado, String token) async {
     try {
-      final updatedAtuador = await repository.toggleAtuador(moduloId, atuadorId, estado, token);
-      
+      final updatedAtuador =
+          await repository.toggleAtuador(moduloId, atuadorId, estado, token);
+
       // Update local state
       final moduloIndex = _modulos.indexWhere((m) => m.id == moduloId);
       if (moduloIndex != -1) {
         final modulo = _modulos[moduloIndex];
-        final atuadorIndex = modulo.atuadores.indexWhere((a) => a.id == atuadorId);
+        final atuadorIndex =
+            modulo.atuadores.indexWhere((a) => a.id == atuadorId);
         if (atuadorIndex != -1) {
           modulo.atuadores[atuadorIndex] = updatedAtuador;
           notifyListeners();
@@ -78,7 +82,7 @@ class ModuloProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       notifyListeners();
       return false;
     }
@@ -94,7 +98,7 @@ class ModuloProvider with ChangeNotifier {
       _modulos.removeWhere((m) => m.id == id);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -114,7 +118,7 @@ class ModuloProvider with ChangeNotifier {
         _modulos.addAll(newModulos);
       }
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
