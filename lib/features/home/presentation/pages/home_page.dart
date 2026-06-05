@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../estufa/presentation/providers/estufa_provider.dart';
+import '../../../product/presentation/providers/product_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,48 +19,46 @@ class _HomePageState extends State<HomePage> {
 
   void _handleLogout() async {
     setState(() => _isLoggingOut = true);
-    
-    // Wait for animation
     await Future.delayed(const Duration(milliseconds: 800));
-    
     if (mounted) {
       context.read<AuthProvider>().logout();
       context.go('/login');
     }
   }
 
-  void _showVincularEstufaDialog(BuildContext context) {
+  void _showLinkProductDialog(BuildContext context) {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Vincular Estufa'),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Vincular Produto'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: 'Código da Estufa'),
+          decoration: const InputDecoration(
+            labelText: 'Código do Produto',
+            hintText: 'Ex: DEMO-001',
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () async {
-              final codigo = controller.text;
-              if (codigo.isNotEmpty) {
-                final token = context.read<AuthProvider>().token;
-                if (token != null) {
-                  final success = await context.read<EstufaProvider>().vincularEstufa(codigo, token);
-                  if (success) {
-                    if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Estufa vinculada com sucesso!')));
-                    }
-                  } else {
-                    if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.read<EstufaProvider>().error ?? 'Erro ao vincular')));
-                    }
-                  }
+              final code = controller.text.trim();
+              if (code.isEmpty) return;
+              final product = await ctx.read<ProductProvider>().linkProduct(code);
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                if (product != null) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Produto vinculado com sucesso!')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(ctx.read<ProductProvider>().error ?? 'Erro ao vincular')),
+                  );
                 }
               }
             },
@@ -77,7 +75,6 @@ class _HomePageState extends State<HomePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.read<AuthProvider>().user;
 
-    // If logging out, show the exit animation overlay
     if (_isLoggingOut) {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -90,10 +87,9 @@ class _HomePageState extends State<HomePage> {
                   .shake(duration: 500.ms)
                   .fadeOut(delay: 500.ms, duration: 300.ms),
               const SizedBox(height: 20),
-              Text(
-                'Até logo!',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ).animate().fadeOut(delay: 500.ms, duration: 300.ms),
+              Text('Até logo!', style: Theme.of(context).textTheme.headlineMedium)
+                  .animate()
+                  .fadeOut(delay: 500.ms, duration: 300.ms),
             ],
           ),
         ),
@@ -106,9 +102,7 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -128,8 +122,22 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               leading: const Icon(Icons.home),
               title: const Text('Início'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.flask),
+              title: const Text('Meus Produtos'),
               onTap: () {
-                Navigator.pop(context); // Close drawer
+                Navigator.pop(context);
+                context.push('/products');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: const Text('Vincular Produto'),
+              onTap: () {
+                Navigator.pop(context);
+                _showLinkProductDialog(context);
               },
             ),
             if (user?['role'] == 'ADMIN')
@@ -138,25 +146,9 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Usuários'),
                 onTap: () {
                   Navigator.pop(context);
-                  context.push('/usuarios');
+                  context.push('/users');
                 },
               ),
-            ListTile(
-              leading: const Icon(FontAwesomeIcons.plantWilt),
-              title: const Text('Estufas'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/estufas');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.qr_code),
-              title: const Text('Adicionar Estufa'),
-              onTap: () {
-                Navigator.pop(context);
-                _showVincularEstufaDialog(context);
-              },
-            ),
           ],
         ),
       ),
@@ -175,17 +167,17 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Section
+            // Welcome banner
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDark 
+                  colors: isDark
                       ? [Colors.green[900]!, Colors.green[800]!]
                       : [Colors.green[100]!, Colors.green[50]!],
                   begin: Alignment.topLeft,
@@ -205,7 +197,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(FontAwesomeIcons.plantWilt, size: 32, color: Colors.green),
+                      const Icon(FontAwesomeIcons.flask, size: 32, color: Colors.green),
                       const SizedBox(width: 12),
                       Text(
                         'Olá, ${user?['name'] ?? 'Usuário'}!',
@@ -218,7 +210,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sua estufa está operando de forma ideal.',
+                    'Bem-vindo ao sistema de hidroponia SICA.',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: isDark ? Colors.green[100] : Colors.green[800],
                         ),
@@ -229,53 +221,46 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 32),
 
-            // Dashboard Grid
             Text(
               'Ações Rápidas',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
             const SizedBox(height: 16),
-            
+
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
-                  _buildDashboardCard(
+                  _buildActionCard(
                     context,
-                    icon: FontAwesomeIcons.temperatureThreeQuarters,
-                    title: 'Temperatura',
-                    value: '24°C',
-                    color: Colors.orange,
+                    icon: FontAwesomeIcons.flask,
+                    title: 'Meus Produtos',
+                    subtitle: 'Ver e gerenciar',
+                    color: Colors.cyan,
                     delay: 300,
+                    onTap: () => context.push('/products'),
                   ),
-                  _buildDashboardCard(
+                  _buildActionCard(
                     context,
-                    icon: FontAwesomeIcons.droplet,
-                    title: 'Umidade',
-                    value: '65%',
-                    color: Colors.blue,
+                    icon: Icons.qr_code,
+                    title: 'Vincular',
+                    subtitle: 'Novo produto',
+                    color: Colors.green,
                     delay: 400,
+                    onTap: () => _showLinkProductDialog(context),
                   ),
-                  _buildDashboardCard(
-                    context,
-                    icon: FontAwesomeIcons.sun,
-                    title: 'Luminosidade',
-                    value: '850 lux',
-                    color: Colors.amber,
-                    delay: 500,
-                  ),
-                  _buildDashboardCard(
-                    context,
-                    icon: FontAwesomeIcons.seedling,
-                    title: 'Umidade do Solo',
-                    value: 'Alta',
-                    color: Colors.brown,
-                    delay: 600,
-                  ),
+                  if (user?['role'] == 'ADMIN')
+                    _buildActionCard(
+                      context,
+                      icon: Icons.people,
+                      title: 'Usuários',
+                      subtitle: 'Gerenciar acesso',
+                      color: Colors.purple,
+                      delay: 500,
+                      onTap: () => context.push('/users'),
+                    ),
                 ],
               ),
             ),
@@ -285,52 +270,47 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDashboardCard(
+  Widget _buildActionCard(
     BuildContext context, {
     required IconData icon,
     required String title,
-    required String value,
+    required String subtitle,
     required Color color,
     required int delay,
+    required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: delay.ms, duration: 600.ms).scale(delay: delay.ms, curve: Curves.easeOutBack);
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ).animate().fadeIn(delay: delay.ms, duration: 600.ms).scale(delay: delay.ms, curve: Curves.easeOutBack),
+    );
   }
 }
