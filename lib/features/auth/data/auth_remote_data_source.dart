@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/network/api_response.dart';
+import '../../../core/constants/api_constants.dart';
 
 class AuthRemoteDataSource {
-  // For Android Emulator use 10.0.2.2, for Web/iOS use localhost
-  // TODO: Move to config/env
-  static const String baseUrl = 'http://192.168.1.103:3000';
-
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('${ApiConstants.baseUrl}/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return _unwrap(response.body);
-    } else {
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Falha no login');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _unwrap(response.body);
+      } else {
+        throw Exception(
+            jsonDecode(response.body)['message'] ?? 'Falha no login');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -26,15 +26,19 @@ class AuthRemoteDataSource {
       String email, String password, String name) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
+        Uri.parse('${ApiConstants.baseUrl}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password, 'name': name}),
       );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return _unwrap(response.body);
-    } else {
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Falha no cadastro');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _unwrap(response.body);
+      } else {
+        throw Exception(
+            jsonDecode(response.body)['message'] ?? 'Falha no cadastro');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

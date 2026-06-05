@@ -40,6 +40,7 @@ void main() {
 final _router = GoRouter(
   initialLocation: '/splash',
   routes: [
+    GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
     GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
     GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
     GoRoute(path: '/', builder: (_, __) => const HomePage()),

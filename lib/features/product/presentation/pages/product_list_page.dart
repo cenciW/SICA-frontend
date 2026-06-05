@@ -340,7 +340,7 @@ class _ProductCard extends StatelessWidget {
                       ),
                     const Spacer(),
                     // Admin: sempre pode editar e deletar. Usuário normal: só OWNER
-                    if (adminMode || product.isOwner) ...[
+                    if (adminMode) ...[
                       IconButton(
                         icon: const Icon(Icons.edit_outlined, color: Color(0xFFE67E22), size: 20),
                         tooltip: 'Editar',
@@ -377,7 +377,7 @@ class _ProductCard extends StatelessWidget {
     return 'há ${diff.inDays}d';
   }
 
-  void _confirmDelete(BuildContext context, ProductProvider provider) async {
+  Future<void> _confirmDelete(BuildContext context, ProductProvider provider) async {
     final linkedCount = product.userProductsCount ?? 0;
 
     final confirm = await showDialog<bool>(

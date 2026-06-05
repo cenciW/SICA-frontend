@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/network/api_response.dart';
 import '../../domain/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -32,9 +31,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e is ApiException
-          ? e.message
-          : e.toString().replaceAll('Exception: ', '');
+      _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -49,15 +46,12 @@ class AuthProvider extends ChangeNotifier {
     try {
       final result = await authRepository.register(email, password, name);
       _token = result['access_token'];
-      _user = result[
-          'user']; // Assuming register also returns user object now, or we might need to adjust backend register
+      _user = result['user'];
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e is ApiException
-          ? e.message
-          : e.toString().replaceAll('Exception: ', '');
+      _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
       return false;

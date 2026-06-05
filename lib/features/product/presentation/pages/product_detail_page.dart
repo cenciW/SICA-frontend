@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/product.dart';
 import '../providers/product_provider.dart';
 import 'product_form_page.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../reading/domain/entities/reading.dart';
 import '../../../reading/presentation/providers/reading_provider.dart';
 import '../../../alert/domain/entities/alert.dart';
 import '../../../alert/presentation/providers/alert_provider.dart';
-import '../../../user_product/presentation/pages/user_product_page.dart';
 import '../../../../shared/widgets/decimal_form_field.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -50,15 +50,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         foregroundColor: Colors.white,
         actions: [
-          if (_product.isOwner) ...[
-            IconButton(
-              icon: const Icon(Icons.people_outline),
-              tooltip: 'Gerenciar acesso',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => UserProductPage(product: _product)),
-              ),
-            ),
+          if (context.read<AuthProvider>().user?['role'] == 'ADMIN')
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Editar',
@@ -67,7 +59,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 MaterialPageRoute(builder: (_) => ProductFormPage(product: _product)),
               ),
             ),
-          ],
         ],
       ),
       body: RefreshIndicator(
