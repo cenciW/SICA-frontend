@@ -82,7 +82,8 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(FontAwesomeIcons.handSpock, size: 80, color: Colors.amber)
+              const Icon(FontAwesomeIcons.handSpock,
+                      size: 80, color: Colors.amber)
                   .animate()
                   .shake(duration: 500.ms)
                   .fadeOut(delay: 500.ms, duration: 300.ms),
@@ -107,7 +108,8 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Icon(FontAwesomeIcons.leaf, size: 48, color: Colors.white),
+                  const Icon(FontAwesomeIcons.leaf,
+                      size: 48, color: Colors.white),
                   const SizedBox(height: 10),
                   Text(
                     'SICA',
@@ -199,12 +201,20 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Icon(FontAwesomeIcons.flask, size: 32, color: Colors.green),
                       const SizedBox(width: 12),
-                      Text(
-                        'Olá, ${user?['name'] ?? 'Usuário'}!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.green[900],
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Olá, ${user?['name'] ?? 'Usuário'}!',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isDark ? Colors.white : Colors.green[900],
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),
@@ -217,7 +227,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
+            )
+                .animate()
+                .fadeIn(duration: 600.ms)
+                .slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
 
             const SizedBox(height: 32),
 
