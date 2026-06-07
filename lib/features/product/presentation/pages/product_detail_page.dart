@@ -27,9 +27,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   void initState() {
     super.initState();
     _product = widget.product;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<AlertProvider>().loadAlerts(_product.id);
       context.read<ReadingProvider>().loadReadings(_product.id, limit: 10);
+      // Puxa o estado atual do banco (relay/pump state e última ação),
+      // que pode estar desatualizado no snapshot vindo da lista.
+      final fresh = await context.read<ProductProvider>().refreshProduct(_product.id);
+      if (fresh != null && mounted) setState(() => _product = fresh);
     });
   }
 
@@ -76,27 +80,35 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           children: [
             _SensorSection(product: _product).animate().fadeIn(duration: 400.ms),
             const SizedBox(height: 16),
-            _RelaySection(
-              product: _product,
-              onToggleLed: (newState) async {
-                final ok = await context.read<ProductProvider>().toggleRelay(_product.id, newState);
-                if (ok && mounted) {
-                  final updated = context.read<ProductProvider>().products.firstWhere(
-                    (p) => p.id == _product.id,
-                    orElse: () => _product.copyWith(relayState: newState),
-                  );
-                  setState(() => _product = updated);
-                }
-              },
-              onTogglePump: (newState) async {
-                final ok = await context.read<ProductProvider>().togglePump(_product.id, newState);
-                if (ok && mounted) {
-                  final updated = context.read<ProductProvider>().products.firstWhere(
-                    (p) => p.id == _product.id,
-                    orElse: () => _product.copyWith(pumpState: newState),
-                  );
-                  setState(() => _product = updated);
-                }
+            Consumer<ProductProvider>(
+              builder: (context, provider, _) {
+                final current = provider.products.firstWhere(
+                  (p) => p.id == _product.id,
+                  orElse: () => _product,
+                );
+                return _RelaySection(
+                  product: current,
+                  ledPending: provider.isTogglePending(_product.id, 'led'),
+                  pumpPending: provider.isTogglePending(_product.id, 'pump'),
+                  onSaveCycle: (data) async {
+                    final ok = await provider.setRelayCycle(_product.id, data);
+                    if (mounted) {
+                      if (ok) {
+                        final updated = provider.products.firstWhere(
+                          (p) => p.id == _product.id,
+                          orElse: () => _product,
+                        );
+                        setState(() => _product = updated);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(
+                            provider.error ?? 'Erro ao salvar ciclo')),
+                        );
+                      }
+                    }
+                    return ok;
+                  },
+                );
               },
             ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
             const SizedBox(height: 16),
@@ -271,15 +283,44 @@ class _BigSensorCard extends StatelessWidget {
   }
 }
 
+/// Modo de operação derivado do par de segundos.
+enum _DeviceMode { off, alwaysOn, cycle }
+
+/// Unidade de tempo para os campos de ciclo.
+enum _TimeUnit { seconds, minutes, hours }
+
+extension _TimeUnitX on _TimeUnit {
+  int get factor => switch (this) {
+        _TimeUnit.seconds => 1,
+        _TimeUnit.minutes => 60,
+        _TimeUnit.hours => 3600,
+      };
+  String get label => switch (this) {
+        _TimeUnit.seconds => 'seg',
+        _TimeUnit.minutes => 'min',
+        _TimeUnit.hours => 'h',
+      };
+}
+
+/// Converte segundos para a maior unidade que ainda dá valor inteiro exato.
+({int value, _TimeUnit unit}) _bestUnit(int seconds) {
+  if (seconds <= 0) return (value: 0, unit: _TimeUnit.minutes);
+  if (seconds % 3600 == 0) return (value: seconds ~/ 3600, unit: _TimeUnit.hours);
+  if (seconds % 60 == 0) return (value: seconds ~/ 60, unit: _TimeUnit.minutes);
+  return (value: seconds, unit: _TimeUnit.seconds);
+}
+
 class _RelaySection extends StatelessWidget {
   final Product product;
-  final ValueChanged<bool> onToggleLed;
-  final ValueChanged<bool> onTogglePump;
+  final bool ledPending;
+  final bool pumpPending;
+  final Future<bool> Function(Map<String, dynamic> data) onSaveCycle;
 
   const _RelaySection({
     required this.product,
-    required this.onToggleLed,
-    required this.onTogglePump,
+    required this.ledPending,
+    required this.pumpPending,
+    required this.onSaveCycle,
   });
 
   @override
@@ -301,24 +342,44 @@ class _RelaySection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _DeviceRow(
+            _DeviceCycleEditor(
+              key: ValueKey('led-${product.ledOnSeconds}-${product.ledOffSeconds}-${product.ledStartOn}'),
               icon: Icons.lightbulb,
               iconOff: Icons.lightbulb_outline,
               label: 'Iluminação LED',
-              isOn: product.relayState,
               activeColor: const Color(0xFFFFB300),
+              onSeconds: product.ledOnSeconds,
+              offSeconds: product.ledOffSeconds,
+              startOn: product.ledStartOn,
+              isOn: product.relayState,
+              pending: ledPending,
               lastActionAt: product.relayLastActionAt,
-              onToggle: onToggleLed,
+              hint: 'Ex.: Floração 12h/12h · Vegetativo 18h/6h · Alface 16h/8h',
+              onSave: (on, off, startOn) => onSaveCycle({
+                'led_on_seconds': on,
+                'led_off_seconds': off,
+                'led_start_on': startOn,
+              }),
             ),
-            const Divider(height: 24),
-            _DeviceRow(
+            const Divider(height: 28),
+            _DeviceCycleEditor(
+              key: ValueKey('pump-${product.pumpOnSeconds}-${product.pumpOffSeconds}-${product.pumpStartOn}'),
               icon: Icons.water,
               iconOff: Icons.water_outlined,
               label: 'Bomba d\'Água',
-              isOn: product.pumpState,
               activeColor: const Color(0xFF0288D1),
+              onSeconds: product.pumpOnSeconds,
+              offSeconds: product.pumpOffSeconds,
+              startOn: product.pumpStartOn,
+              isOn: product.pumpState,
+              pending: pumpPending,
               lastActionAt: product.pumpLastActionAt,
-              onToggle: onTogglePump,
+              hint: 'Ex.: 15min ligada / 15min desligada',
+              onSave: (on, off, startOn) => onSaveCycle({
+                'pump_on_seconds': on,
+                'pump_off_seconds': off,
+                'pump_start_on': startOn,
+              }),
             ),
           ],
         ),
@@ -327,66 +388,305 @@ class _RelaySection extends StatelessWidget {
   }
 }
 
-class _DeviceRow extends StatelessWidget {
+class _DeviceCycleEditor extends StatefulWidget {
   final IconData icon;
   final IconData iconOff;
   final String label;
-  final bool isOn;
   final Color activeColor;
+  final int onSeconds;
+  final int offSeconds;
+  final bool startOn;
+  final bool isOn;
+  final bool pending;
   final DateTime? lastActionAt;
-  final ValueChanged<bool> onToggle;
+  final String hint;
+  final Future<bool> Function(int onSeconds, int offSeconds, bool startOn) onSave;
 
-  const _DeviceRow({
+  const _DeviceCycleEditor({
+    super.key,
     required this.icon,
     required this.iconOff,
     required this.label,
-    required this.isOn,
     required this.activeColor,
+    required this.onSeconds,
+    required this.offSeconds,
+    required this.startOn,
+    required this.isOn,
+    required this.pending,
     required this.lastActionAt,
-    required this.onToggle,
+    required this.hint,
+    required this.onSave,
   });
+
+  @override
+  State<_DeviceCycleEditor> createState() => _DeviceCycleEditorState();
+}
+
+class _DeviceCycleEditorState extends State<_DeviceCycleEditor> {
+  late _DeviceMode _mode;
+  late bool _startOn;
+  late final TextEditingController _onCtrl;
+  late final TextEditingController _offCtrl;
+  late _TimeUnit _onUnit;
+  late _TimeUnit _offUnit;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.onSeconds == 0
+        ? _DeviceMode.off
+        : widget.offSeconds == 0
+            ? _DeviceMode.alwaysOn
+            : _DeviceMode.cycle;
+    _startOn = widget.startOn;
+
+    final on = _bestUnit(widget.onSeconds == 0 ? 0 : widget.onSeconds);
+    final off = _bestUnit(widget.offSeconds);
+    _onUnit = on.unit;
+    _offUnit = off.unit;
+    _onCtrl = TextEditingController(text: on.value > 0 ? on.value.toString() : '');
+    _offCtrl = TextEditingController(text: off.value > 0 ? off.value.toString() : '');
+  }
+
+  @override
+  void dispose() {
+    _onCtrl.dispose();
+    _offCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    int onSeconds;
+    int offSeconds;
+
+    switch (_mode) {
+      case _DeviceMode.off:
+        onSeconds = 0;
+        offSeconds = 0;
+        break;
+      case _DeviceMode.alwaysOn:
+        onSeconds = 1;
+        offSeconds = 0;
+        break;
+      case _DeviceMode.cycle:
+        final on = int.tryParse(_onCtrl.text.trim()) ?? 0;
+        final off = int.tryParse(_offCtrl.text.trim()) ?? 0;
+        if (on <= 0 || off <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Informe tempos de ligado e desligado maiores que zero.')),
+          );
+          return;
+        }
+        onSeconds = on * _onUnit.factor;
+        offSeconds = off * _offUnit.factor;
+        break;
+    }
+
+    setState(() => _saving = true);
+    final ok = await widget.onSave(onSeconds, offSeconds, _startOn);
+    if (mounted) setState(() => _saving = false);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${widget.label}: configuração salva.')),
+      );
+    }
+  }
+
+  String _statusLabel() {
+    switch (_mode) {
+      case _DeviceMode.off:
+        return 'Desligado';
+      case _DeviceMode.alwaysOn:
+        return 'Sempre ligado';
+      case _DeviceMode.cycle:
+        return widget.isOn ? 'Em ciclo · ligado agora' : 'Em ciclo';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+    final activeNow = widget.isOn && _mode != _DeviceMode.off;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isOn ? activeColor.withOpacity(0.15) : colorScheme.onSurface.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            isOn ? icon : iconOff,
-            color: isOn ? activeColor : colorScheme.onSurfaceVariant,
-            size: 26,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: activeNow ? widget.activeColor.withOpacity(0.15) : colorScheme.onSurface.withOpacity(0.07),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                activeNow ? widget.icon : widget.iconOff,
+                color: activeNow ? widget.activeColor : colorScheme.onSurfaceVariant,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.label, style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                  if (widget.pending)
+                    Row(
+                      children: [
+                        SizedBox(
+                          height: 12, width: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: widget.activeColor),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Aguardando confirmação do dispositivo',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      _statusLabel(),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: activeNow ? widget.activeColor : colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  if (widget.lastActionAt != null)
+                    Text(
+                      'Última ação: ${widget.lastActionAt!.day.toString().padLeft(2, '0')}/${widget.lastActionAt!.month.toString().padLeft(2, '0')} ${widget.lastActionAt!.hour.toString().padLeft(2, '0')}:${widget.lastActionAt!.minute.toString().padLeft(2, '0')}',
+                      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
+        const SizedBox(height: 12),
+        SegmentedButton<_DeviceMode>(
+          segments: const [
+            ButtonSegment(value: _DeviceMode.off, label: Text('Desligado'), icon: Icon(Icons.power_off, size: 16)),
+            ButtonSegment(value: _DeviceMode.alwaysOn, label: Text('Sempre'), icon: Icon(Icons.flash_on, size: 16)),
+            ButtonSegment(value: _DeviceMode.cycle, label: Text('Ciclo'), icon: Icon(Icons.loop, size: 16)),
+          ],
+          selected: {_mode},
+          onSelectionChanged: (s) => setState(() => _mode = s.first),
+          style: ButtonStyle(visualDensity: VisualDensity.compact),
+        ),
+        if (_mode == _DeviceMode.cycle) ...[
+          const SizedBox(height: 14),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-              Text(
-                isOn ? 'Ligado' : 'Desligado',
-                style: textTheme.bodySmall?.copyWith(
-                  color: isOn ? activeColor : colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (lastActionAt != null)
-                Text(
-                  'Última ação: ${lastActionAt!.day.toString().padLeft(2, '0')}/${lastActionAt!.month.toString().padLeft(2, '0')} ${lastActionAt!.hour.toString().padLeft(2, '0')}:${lastActionAt!.minute.toString().padLeft(2, '0')}',
-                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
+              Expanded(child: _DurationField(
+                label: 'Ligado por',
+                controller: _onCtrl,
+                unit: _onUnit,
+                onUnitChanged: (u) => setState(() => _onUnit = u),
+                color: widget.activeColor,
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: _DurationField(
+                label: 'Desligado por',
+                controller: _offCtrl,
+                unit: _offUnit,
+                onUnitChanged: (u) => setState(() => _offUnit = u),
+                color: widget.activeColor,
+              )),
             ],
           ),
+          const SizedBox(height: 6),
+          Text(widget.hint, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: _startOn,
+            activeColor: widget.activeColor,
+            title: const Text('Iniciar ligado'),
+            subtitle: Text(
+              _startOn
+                  ? 'Liga imediatamente ao salvar e então cicla.'
+                  : 'Aguarda o tempo de desligado antes da 1ª ativação.',
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+            onChanged: (v) => setState(() => _startOn = v),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: widget.activeColor,
+              foregroundColor: Colors.black87,
+              disabledBackgroundColor: widget.activeColor.withOpacity(0.4),
+              disabledForegroundColor: Colors.black54,
+            ),
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
+                : const Icon(Icons.send, size: 16),
+            label: const Text('Aplicar'),
+          ),
         ),
-        Switch(value: isOn, activeColor: activeColor, onChanged: onToggle),
+      ],
+    );
+  }
+}
+
+class _DurationField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final _TimeUnit unit;
+  final ValueChanged<_TimeUnit> onUnitChanged;
+  final Color color;
+
+  const _DurationField({
+    required this.label,
+    required this.controller,
+    required this.unit,
+    required this.onUnitChanged,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: OutlineInputBorder(),
+                  hintText: '0',
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            DropdownButton<_TimeUnit>(
+              value: unit,
+              underline: const SizedBox.shrink(),
+              onChanged: (u) => u != null ? onUnitChanged(u) : null,
+              items: _TimeUnit.values
+                  .map((u) => DropdownMenuItem(value: u, child: Text(u.label)))
+                  .toList(),
+            ),
+          ],
+        ),
       ],
     );
   }

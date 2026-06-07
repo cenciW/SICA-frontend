@@ -434,6 +434,9 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
+/// Indicador (somente leitura) do estado do LED reportado pelo firmware.
+/// O controle é feito na tela de detalhe — clicar aqui não altera nada,
+/// evitando sobrescrever um ciclo configurado por engano.
 class _RelayToggle extends StatelessWidget {
   final Product product;
 
@@ -441,39 +444,54 @@ class _RelayToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.read<ProductProvider>().toggleRelay(product.id, !product.relayState),
-      child: Container(
+    final pending = context.watch<ProductProvider>().isTogglePending(product.id, 'led');
+    final isOn = product.relayState;
+    return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: product.relayState
+          color: isOn
               ? const Color(0xFFFFB300).withOpacity(0.2)
               : Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: product.relayState ? const Color(0xFFFFB300) : Colors.white30,
+            color: isOn ? const Color(0xFFFFB300) : Colors.white30,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              product.relayState ? Icons.lightbulb : Icons.lightbulb_outline,
-              size: 16,
-              color: product.relayState ? const Color(0xFFFFB300) : Colors.white54,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              product.relayState ? 'ON' : 'OFF',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: product.relayState ? const Color(0xFFFFB300) : Colors.white54,
-              ),
-            ),
-          ],
+          children: pending
+              ? const [
+                  SizedBox(
+                    height: 14, width: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFFB300)),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    '...',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFFB300),
+                    ),
+                  ),
+                ]
+              : [
+                  Icon(
+                    isOn ? Icons.lightbulb : Icons.lightbulb_outline,
+                    size: 16,
+                    color: isOn ? const Color(0xFFFFB300) : Colors.white54,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isOn ? 'ON' : 'OFF',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isOn ? const Color(0xFFFFB300) : Colors.white54,
+                    ),
+                  ),
+                ],
         ),
-      ),
     );
   }
 }

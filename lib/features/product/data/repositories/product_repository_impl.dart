@@ -27,8 +27,13 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<void> deleteProduct(String id) => dataSource.deleteProduct(id);
 
   @override
-  Future<Map<String, dynamic>> toggleRelay(String id, String device, bool state) =>
-      dataSource.toggleRelay(id, device, state);
+  Future<Map<String, dynamic>> getRelayState(String productId) =>
+      dataSource.getRelayState(productId);
+
+  @override
+  Future<Map<String, dynamic>> setRelayCycle(
+          String productId, Map<String, dynamic> data) =>
+      dataSource.setRelayCycle(productId, data);
 
   @override
   Future<Map<String, dynamic>> updateInstanceConfig(

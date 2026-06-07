@@ -83,14 +83,24 @@ class ProductRemoteDataSource {
     if (r.statusCode != 200 && r.statusCode != 204) throw Exception('Failed to delete product');
   }
 
-  Future<Map<String, dynamic>> toggleRelay(String id, String device, bool state) async {
-    final r = await client.patch(
-      Uri.parse('${ApiConstants.baseUrl}/products/$id/relay/toggle'),
+  Future<Map<String, dynamic>> getRelayState(String productId) async {
+    final r = await client.get(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/relay'),
       headers: _headers,
-      body: json.encode({'device': device, 'state': state}),
     );
     if (r.statusCode == 200) return _unwrapMap(r);
-    throw Exception('Failed to toggle relay');
+    throw Exception('Failed to load relay state');
+  }
+
+  Future<Map<String, dynamic>> setRelayCycle(
+      String productId, Map<String, dynamic> data) async {
+    final r = await client.patch(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/relay/cycle'),
+      headers: _headers,
+      body: json.encode(data),
+    );
+    if (r.statusCode == 200) return _unwrapMap(r);
+    throw Exception('Failed to set relay cycle');
   }
 
   Future<Map<String, dynamic>> updateInstanceConfig(

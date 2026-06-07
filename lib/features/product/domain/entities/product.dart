@@ -18,6 +18,13 @@ class Product {
   final DateTime? relayLastActionAt;
   final bool pumpState;
   final DateTime? pumpLastActionAt;
+  // Config de ciclo (segundos) + fase inicial
+  final int ledOnSeconds;
+  final int ledOffSeconds;
+  final bool ledStartOn;
+  final int pumpOnSeconds;
+  final int pumpOffSeconds;
+  final bool pumpStartOn;
   final DateTime createdAt;
   final DateTime updatedAt;
   // Metadados da instância (UserProduct)
@@ -46,6 +53,12 @@ class Product {
     this.relayLastActionAt,
     required this.pumpState,
     this.pumpLastActionAt,
+    this.ledOnSeconds = 0,
+    this.ledOffSeconds = 0,
+    this.ledStartOn = true,
+    this.pumpOnSeconds = 0,
+    this.pumpOffSeconds = 0,
+    this.pumpStartOn = true,
     required this.createdAt,
     required this.updatedAt,
     this.userRole,
@@ -73,6 +86,16 @@ class Product {
 
   bool get isOwner => userRole == 'OWNER';
 
+  // Modo derivado do par de segundos (LED)
+  bool get ledAlwaysOn => ledOnSeconds > 0 && ledOffSeconds == 0;
+  bool get ledOff => ledOnSeconds == 0;
+  bool get ledCycling => ledOnSeconds > 0 && ledOffSeconds > 0;
+
+  // Modo derivado do par de segundos (Bomba)
+  bool get pumpAlwaysOn => pumpOnSeconds > 0 && pumpOffSeconds == 0;
+  bool get pumpOff => pumpOnSeconds == 0;
+  bool get pumpCycling => pumpOnSeconds > 0 && pumpOffSeconds > 0;
+
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as String,
@@ -99,6 +122,12 @@ class Product {
       pumpLastActionAt: json['pump_last_action_at'] != null
           ? DateTime.parse(json['pump_last_action_at'] as String).toLocal()
           : null,
+      ledOnSeconds: (json['led_on_seconds'] as num?)?.toInt() ?? 0,
+      ledOffSeconds: (json['led_off_seconds'] as num?)?.toInt() ?? 0,
+      ledStartOn: json['led_start_on'] as bool? ?? true,
+      pumpOnSeconds: (json['pump_on_seconds'] as num?)?.toInt() ?? 0,
+      pumpOffSeconds: (json['pump_off_seconds'] as num?)?.toInt() ?? 0,
+      pumpStartOn: json['pump_start_on'] as bool? ?? true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String).toLocal()
           : DateTime.now(),
@@ -125,6 +154,12 @@ class Product {
     double? phMax,
     double? ppmMin,
     double? ppmMax,
+    int? ledOnSeconds,
+    int? ledOffSeconds,
+    bool? ledStartOn,
+    int? pumpOnSeconds,
+    int? pumpOffSeconds,
+    bool? pumpStartOn,
   }) {
     return Product(
       id: id,
@@ -145,6 +180,12 @@ class Product {
       relayLastActionAt: relayLastActionAt ?? this.relayLastActionAt,
       pumpState: pumpState ?? this.pumpState,
       pumpLastActionAt: pumpLastActionAt ?? this.pumpLastActionAt,
+      ledOnSeconds: ledOnSeconds ?? this.ledOnSeconds,
+      ledOffSeconds: ledOffSeconds ?? this.ledOffSeconds,
+      ledStartOn: ledStartOn ?? this.ledStartOn,
+      pumpOnSeconds: pumpOnSeconds ?? this.pumpOnSeconds,
+      pumpOffSeconds: pumpOffSeconds ?? this.pumpOffSeconds,
+      pumpStartOn: pumpStartOn ?? this.pumpStartOn,
       createdAt: createdAt,
       updatedAt: updatedAt,
       userRole: userRole,
