@@ -200,12 +200,10 @@ class _ProductCard extends StatelessWidget {
     final provider = context.read<ProductProvider>();
 
     return GestureDetector(
-      onTap: adminMode
-          ? null
-          : () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-              ),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+      ),
       child: Card(
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
