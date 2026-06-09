@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/device_schedule.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../../data/repositories/product_repository_impl.dart';
 
@@ -28,6 +29,16 @@ class ProductProvider extends ChangeNotifier {
   bool isTogglePending(String productId, String device) =>
       _pendingToggles.contains('$productId:$device');
 
+  // Schedules: cache por productId
+  final Map<String, List<DeviceSchedule>> _schedulesCache = {};
+  bool _schedulesLoading = false;
+  bool get schedulesLoading => _schedulesLoading;
+
+  List<DeviceSchedule> getSchedules(String productId, String device) =>
+      (_schedulesCache[productId] ?? [])
+          .where((s) => s.device == device)
+          .toList();
+
   Future<void> loadProducts() async {
     _isLoading = true;
     _error = null;
@@ -42,9 +53,6 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Busca o produto atualizado no banco (findOne traz relay_state,
-  /// *_last_action_at, etc.) e sincroniza a cópia em _products. Retorna o
-  /// produto fresco, ou null em caso de erro.
   Future<Product?> refreshProduct(String id) async {
     try {
       final fresh = await repository.getProduct(id);
@@ -133,102 +141,100 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  void _applyConfirmedState(
-      String id, String device, Map<String, dynamic> relay) {
-    final idx = _products.indexWhere((p) => p.id == id);
-    if (idx == -1) return;
-    if (device == 'led') {
-      _products[idx] = _products[idx].copyWith(
-        relayState: relay['relay_state'] as bool?,
-        relayLastActionAt: relay['relay_last_action_at'] != null
-            ? DateTime.parse(relay['relay_last_action_at'] as String).toLocal()
-            : null,
-      );
-    } else {
-      _products[idx] = _products[idx].copyWith(
-        pumpState: relay['pump_state'] as bool?,
-        pumpLastActionAt: relay['pump_last_action_at'] != null
-            ? DateTime.parse(relay['pump_last_action_at'] as String).toLocal()
-            : null,
-      );
-    }
-  }
-
-  /// Atualiza estado + última ação de AMBOS os devices a partir do GET /relay.
-  void _applyRelaySnapshot(String id, Map<String, dynamic> relay) {
-    _applyConfirmedState(id, 'led', relay);
-    _applyConfirmedState(id, 'pump', relay);
-  }
-
-  Future<bool> setRelayCycle(String id, Map<String, dynamic> data) async {
-    // Qual device esta config altera (o editor envia só as chaves de um device).
-    final device = data.containsKey('led_on_seconds') ? 'led' : 'pump';
-    final onSeconds = data['${device}_on_seconds'] as int?;
-    final offSeconds = data['${device}_off_seconds'] as int?;
-    final key = '$id:$device';
-
-    _pendingToggles.add(key);
-    _error = null;
-    notifyListeners();
-
+  Future<bool> updateInstanceConfig(
+      String productId, String instanceId, Map<String, dynamic> data) async {
     try {
-      await repository.setRelayCycle(id, data);
-
-      // Aplica imediatamente a config (segundos) no produto local.
-      final idx = _products.indexWhere((p) => p.id == id);
-      if (idx != -1) {
-        _products[idx] = _products[idx].copyWith(
-          ledOnSeconds: data['led_on_seconds'] as int?,
-          ledOffSeconds: data['led_off_seconds'] as int?,
-          ledStartOn: data['led_start_on'] as bool?,
-          pumpOnSeconds: data['pump_on_seconds'] as int?,
-          pumpOffSeconds: data['pump_off_seconds'] as int?,
-          pumpStartOn: data['pump_start_on'] as bool?,
-        );
-      }
-
-      // Estado esperado quando o modo é determinístico:
-      // sempre ligado (on>0,off==0)=>true; desligado (on==0)=>false.
-      // Modo ciclo (on>0 && off>0) oscila => não há alvo fixo (expected=null).
-      final bool? expected = (onSeconds != null && offSeconds != null)
-          ? (onSeconds == 0
-              ? false
-              : (offSeconds == 0 ? true : null))
-          : null;
-
-      // Polling aguardando o firmware confirmar via {clientId}/state.
-      for (var attempt = 0; attempt < 6; attempt++) {
-        await Future.delayed(const Duration(seconds: 1));
-        final relay = await repository.getRelayState(id);
-        final confirmed = device == 'led'
-            ? relay['relay_state'] as bool?
-            : relay['pump_state'] as bool?;
-        // Determinístico: espera o alvo. Ciclo: aceita a 1ª leitura.
-        if (expected == null || confirmed == expected) {
-          _applyRelaySnapshot(id, relay);
-          _pendingToggles.remove(key);
-          notifyListeners();
-          return true;
-        }
-      }
-
-      // Sem confirmação: mantém a config salva, mas sinaliza ausência de retorno.
-      _error = 'Sem confirmação do dispositivo';
-      _pendingToggles.remove(key);
-      notifyListeners();
+      await repository.updateInstanceConfig(productId, instanceId, data);
       return true;
     } catch (e) {
       _error = e.toString();
-      _pendingToggles.remove(key);
       notifyListeners();
       return false;
     }
   }
 
-  Future<bool> updateInstanceConfig(
-      String productId, String instanceId, Map<String, dynamic> data) async {
+  // ── Schedules ──────────────────────────────────────────────────────────────
+
+  Future<void> loadSchedules(String productId) async {
+    _schedulesLoading = true;
+    notifyListeners();
     try {
-      await repository.updateInstanceConfig(productId, instanceId, data);
+      final list = await repository.getSchedules(productId);
+      _schedulesCache[productId] = list;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _schedulesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createSchedule(String productId, Map<String, dynamic> data) async {
+    _error = null;
+    try {
+      final created = await repository.createSchedule(productId, data);
+      final list = List<DeviceSchedule>.from(_schedulesCache[productId] ?? []);
+      list.add(created);
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      _schedulesCache[productId] = list;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateSchedule(
+      String productId, String scheduleId, Map<String, dynamic> data) async {
+    _error = null;
+    try {
+      final updated = await repository.updateSchedule(productId, scheduleId, data);
+      final list = List<DeviceSchedule>.from(_schedulesCache[productId] ?? []);
+      final idx = list.indexWhere((s) => s.id == scheduleId);
+      if (idx != -1) list[idx] = updated;
+      _schedulesCache[productId] = list;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteSchedule(String productId, String scheduleId) async {
+    _error = null;
+    try {
+      await repository.deleteSchedule(productId, scheduleId);
+      _schedulesCache[productId]?.removeWhere((s) => s.id == scheduleId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Manual override ────────────────────────────────────────────────────────
+
+  // state: 'on' | 'off' | 'auto'
+  Future<bool> setManual(String productId, String device, String state) async {
+    _error = null;
+    try {
+      final result = await repository.setManual(productId, device, state);
+      final idx = _products.indexWhere((p) => p.id == productId);
+      if (idx != -1) {
+        final bool? ledManual = result['led_manual'] as bool?;
+        final bool? pumpManual = result['pump_manual'] as bool?;
+        _products[idx] = _products[idx].copyWith(
+          ledManual: ledManual,
+          pumpManual: pumpManual,
+        );
+        notifyListeners();
+      }
       return true;
     } catch (e) {
       _error = e.toString();

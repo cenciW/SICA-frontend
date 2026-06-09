@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../domain/entities/product.dart';
+import '../../domain/entities/device_schedule.dart';
 import '../../../../core/constants/api_constants.dart';
 
 class ProductRemoteDataSource {
@@ -112,5 +113,66 @@ class ProductRemoteDataSource {
     );
     if (r.statusCode == 200) return _unwrapMap(r);
     throw Exception('Failed to update instance config');
+  }
+
+  Future<List<DeviceSchedule>> getSchedules(String productId) async {
+    final r = await client.get(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/relay/schedules'),
+      headers: _headers,
+    );
+    if (r.statusCode == 200) {
+      return _unwrapList(r)
+          .map((j) => DeviceSchedule.fromJson(j as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception('Failed to load schedules');
+  }
+
+  Future<DeviceSchedule> createSchedule(
+      String productId, Map<String, dynamic> data) async {
+    final r = await client.post(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/relay/schedules'),
+      headers: _headers,
+      body: json.encode(data),
+    );
+    if (r.statusCode == 200 || r.statusCode == 201) {
+      return DeviceSchedule.fromJson(_unwrapMap(r));
+    }
+    throw Exception('Failed to create schedule');
+  }
+
+  Future<DeviceSchedule> updateSchedule(
+      String productId, String scheduleId, Map<String, dynamic> data) async {
+    final r = await client.patch(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/products/$productId/relay/schedules/$scheduleId'),
+      headers: _headers,
+      body: json.encode(data),
+    );
+    if (r.statusCode == 200) return DeviceSchedule.fromJson(_unwrapMap(r));
+    throw Exception('Failed to update schedule');
+  }
+
+  Future<void> deleteSchedule(String productId, String scheduleId) async {
+    final r = await client.delete(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/products/$productId/relay/schedules/$scheduleId'),
+      headers: _headers,
+    );
+    if (r.statusCode != 200 && r.statusCode != 204) {
+      throw Exception('Failed to delete schedule');
+    }
+  }
+
+  // 'state': 'on' | 'off' | 'auto'
+  Future<Map<String, dynamic>> setManual(
+      String productId, String device, String state) async {
+    final r = await client.patch(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/relay/manual'),
+      headers: _headers,
+      body: json.encode({'device': device, 'state': state}),
+    );
+    if (r.statusCode == 200) return _unwrapMap(r);
+    throw Exception('Failed to set manual override');
   }
 }

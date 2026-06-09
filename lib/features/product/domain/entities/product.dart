@@ -27,6 +27,9 @@ class Product {
   final bool pumpStartOn;
   final DateTime createdAt;
   final DateTime updatedAt;
+  // Override manual: null = auto (seguir schedule), true = ligado, false = desligado
+  final bool? ledManual;
+  final bool? pumpManual;
   // Metadados da instância (UserProduct)
   final String? userRole;
   final String? instanceId;
@@ -61,6 +64,8 @@ class Product {
     this.pumpStartOn = true,
     required this.createdAt,
     required this.updatedAt,
+    this.ledManual,
+    this.pumpManual,
     this.userRole,
     this.instanceId,
     this.clientId,
@@ -134,6 +139,8 @@ class Product {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String).toLocal()
           : DateTime.now(),
+      ledManual: json['led_manual'] as bool?,
+      pumpManual: json['pump_manual'] as bool?,
       userRole: json['userRole'] as String?,
       instanceId: json['instanceId'] as String?,
       clientId: json['clientId'] as String?,
@@ -142,6 +149,9 @@ class Product {
           (json['_count'] as Map<String, dynamic>?)?['userProducts'] as int?,
     );
   }
+
+  // Sentinel para distinguir "não passou" de "passou null" em copyWith
+  static const _absent = Object();
 
   Product copyWith({
     bool? relayState,
@@ -160,6 +170,8 @@ class Product {
     int? pumpOnSeconds,
     int? pumpOffSeconds,
     bool? pumpStartOn,
+    Object? ledManual = _absent,
+    Object? pumpManual = _absent,
   }) {
     return Product(
       id: id,
@@ -186,6 +198,8 @@ class Product {
       pumpOnSeconds: pumpOnSeconds ?? this.pumpOnSeconds,
       pumpOffSeconds: pumpOffSeconds ?? this.pumpOffSeconds,
       pumpStartOn: pumpStartOn ?? this.pumpStartOn,
+      ledManual: identical(ledManual, _absent) ? this.ledManual : ledManual as bool?,
+      pumpManual: identical(pumpManual, _absent) ? this.pumpManual : pumpManual as bool?,
       createdAt: createdAt,
       updatedAt: updatedAt,
       userRole: userRole,
