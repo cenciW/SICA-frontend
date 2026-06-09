@@ -20,20 +20,46 @@ class AlertRemoteDataSource {
     return decoded;
   }
 
-  List<dynamic> _unwrapList(http.Response r) {
-    final body = _unwrap(r);
-    if (body is List) return body;
-    return [];
-  }
-
-  Future<List<ProductAlert>> getAlerts(String productId, {bool onlyActive = true}) async {
+  Future<({List<ProductAlert> items, int total, bool hasMore})> getAlerts(
+    String productId, {
+    bool onlyActive = true,
+    int take = 5,
+    int skip = 0,
+  }) async {
+    final params = <String, String>{
+      if (onlyActive) 'resolved': 'false',
+      'take': '$take',
+      'skip': '$skip',
+    };
     final uri = Uri.parse('${ApiConstants.baseUrl}/products/$productId/alerts')
-        .replace(queryParameters: onlyActive ? {'resolved': 'false'} : null);
+        .replace(queryParameters: params);
     final r = await client.get(uri, headers: _headers);
     if (r.statusCode == 200) {
-      return _unwrapList(r).map((j) => ProductAlert.fromJson(j as Map<String, dynamic>)).toList();
+      final body = json.decode(r.body);
+      final data = body is Map && body.containsKey('data') ? body['data'] : body;
+      final List items = data['items'] as List? ?? [];
+      final int total = data['total'] as int? ?? 0;
+      final bool hasMore = data['hasMore'] as bool? ?? false;
+      return (
+        items: items.map((j) => ProductAlert.fromJson(j as Map<String, dynamic>)).toList(),
+        total: total,
+        hasMore: hasMore,
+      );
     }
     throw Exception('Failed to load alerts');
+  }
+
+  Future<int> resolveAll(String productId) async {
+    final r = await client.patch(
+      Uri.parse('${ApiConstants.baseUrl}/products/$productId/alerts/resolve-all'),
+      headers: _headers,
+    );
+    if (r.statusCode == 200) {
+      final body = json.decode(r.body);
+      final data = body is Map && body.containsKey('data') ? body['data'] : body;
+      return data['resolved'] as int? ?? 0;
+    }
+    throw Exception('Failed to resolve all alerts');
   }
 
   Future<ProductAlert> resolveAlert(String productId, String alertId) async {
